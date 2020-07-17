@@ -12,18 +12,20 @@ camera = picamera.PiCamera()
 camera.shutter_speed = App[SHUTTER_SPEED]
 camera.iso = App[ISO]
 
+
 def load_image(image):
     # Load the arbitrarily sized image
-    img = Image.open(f"images/{image}")
+    img = Image.open('images' + image)
     # Create an image padded to the required size with
     # mode 'RGB'
     pad = Image.new('RGB', (
         ((img.size[0] + 31) // 32) * 32,
         ((img.size[1] + 15) // 16) * 16,
-        ))
+    ))
     # Paste the original image into the padded one
     pad.paste(img, (0, 0))
     return [img, pad]
+
 
 def preview():
     print('Pi Camera Gui Started')
