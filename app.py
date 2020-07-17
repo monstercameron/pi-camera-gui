@@ -2,6 +2,7 @@ import picamera
 import time
 import sys
 from pynput.keyboard import Key, Listener
+from PIL import Image
 from constants import *
 from controls import *
 
@@ -11,12 +12,28 @@ camera = picamera.PiCamera()
 camera.shutter_speed = App[SHUTTER_SPEED]
 camera.iso = App[ISO]
 
+def load_image(image):
+    # Load the arbitrarily sized image
+    img = Image.open(f"images/{image}")
+    # Create an image padded to the required size with
+    # mode 'RGB'
+    pad = Image.new('RGB', (
+        ((img.size[0] + 31) // 32) * 32,
+        ((img.size[1] + 15) // 16) * 16,
+        ))
+    # Paste the original image into the padded one
+    pad.paste(img, (0, 0))
+    return [img, pad]
 
 def preview():
     print('Pi Camera Gui Started')
     camera.resolution = (960, 540)
     print('Starting preview')
     camera.start_preview(fullscreen=False, window=DEFAULT_WINDOW_SIZE)
+    image = load_image('overlay_sm.png')
+    o = camera.add_overlay(image[0].tostring(), size=image[1].size)
+    o.alpha = 128
+    o.layer = 3
     # camera.capture('images/test.jpg')
     # time.sleep(5)
 
