@@ -31,7 +31,7 @@ def preview():
     print('Starting preview')
     camera.start_preview(fullscreen=False, window=DEFAULT_WINDOW_SIZE)
     image = load_image('overlay_sm.png')
-    o = camera.add_overlay(image[0].tostring(), size=image[1].size)
+    o = camera.add_overlay(image[0].tobytes(), size=image[1].size)
     o.alpha = 128
     o.layer = 3
     # camera.capture('images/test.jpg')
