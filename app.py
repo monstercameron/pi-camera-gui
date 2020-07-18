@@ -15,7 +15,7 @@ camera.iso = App[ISO]
 
 def load_image(image):
     # Load the arbitrarily sized image
-    img = Image.open('images' + image)
+    img = Image.open(f"images/{image}")
     # Create an image padded to the required size with
     # mode 'RGB'
     pad = Image.new('RGB', (
