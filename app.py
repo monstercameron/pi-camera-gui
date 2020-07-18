@@ -31,10 +31,10 @@ def preview():
     print('Pi Camera Gui Started')
     camera.resolution = (960, 540)
     print('Starting preview')
-    camera.start_preview(fullscreen=False, window=DEFAULT_WINDOW_SIZE)
-    image = load_image('overlay_sm.png')
-    o = camera.add_overlay(image[0].tobytes(), size=image[1].size)
-    o.alpha = 128
+    camera.start_preview(fullscreen=True, window=DEFAULT_WINDOW_SIZE)
+    image = load_image('overlay.png')
+    o = camera.add_overlay(image[1].tobytes(), size=image[1].size)
+    o.alpha = 255
     o.layer = 3
     # camera.capture('images/test.jpg')
     # time.sleep(5)
@@ -109,6 +109,7 @@ def take_photo():
     try:
         file = f"{App[IMAGE_DIRECTORY]}/{App[IMAGE_NAME_SCHEME]}{App[IMAGE_COUNT]}.{App[IMAGE_FORMAT]}"
         print('Taking photo: ', file)
+        camera.annotate_text = ''
         camera.capture(file)
         print('took photo', file)
     except:
