@@ -146,13 +146,10 @@ def main():
     # o = camera.add_overlay(pygame.image.tostring(
     #     screen, 'RGBA'), size=(1280, 720))
     # o = camera.add_overlay(image[1].tobytes(), size=image[1].size)
-    o.alpha = 255
-    o.layer = 3
-
     dd = 50
 
     firstLoop = True
-    
+
     o = None
 
     while App[ALIVE]:
@@ -184,6 +181,8 @@ def main():
         if firstLoop:
             o = camera.add_overlay(pygame.image.tostring(
                 ss, 'RGBA'), size=(1280, 720), fullscreen=False, window=DEFAULT_WINDOW_SIZE)
+            o.alpha = 255
+            o.layer = 3
             firstLoop = not firstLoop
         else:
             o.update(pygamesScreenRaw)
