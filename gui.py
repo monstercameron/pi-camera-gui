@@ -51,10 +51,9 @@ while running:
     rect = surf.get_rect()
     screen.blit(surf, (SCREEN_WIDTH/2, SCREEN_HEIGHT/2))
 
-    # imgdata = pygame.surfarray.array2d(surf)
-    imgdata = pygame.PixelArray(surf)
     if writeOnce:
-        print(imgdata)
-        savetxt('data.csv', imgdata, delimiter=',')
+        # image = pygame.image.tostring(screen, 'RGBA')
+        # print(image)
         writeOnce = not writeOnce
+
     pygame.display.flip()

@@ -5,8 +5,21 @@ from pynput.keyboard import Key, Listener
 from PIL import Image
 from constants import *
 from controls import *
-
-# setup
+import pygame
+from numpy import savetxt
+from pygame.locals import (
+    K_UP,
+    K_DOWN,
+    K_LEFT,
+    K_RIGHT,
+    K_ESCAPE,
+    KEYDOWN,
+    QUIT,
+)
+pygame.init()
+SCREEN_WIDTH = 800
+SCREEN_HEIGHT = 600
+screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
 App[IMAGE_DIRECTORY] = 'images'
 camera = picamera.PiCamera()
 camera.shutter_speed = App[SHUTTER_SPEED]
@@ -117,17 +130,46 @@ def take_photo():
 
 
 def main():
-    print('Hajime!')
-
     # listens for keypresses in a non blocking way
     # listener = Listener(on_press=keyboard_press, on_release=keyboard_release)
-    listener = Listener(on_press=keyboard_press)
-    listener.start()
-    preview()
+    # listener = Listener(on_press=keyboard_press)
+    # listener.start()
+    # preview()
+
+    print('Pi Camera Gui Started')
+    camera.resolution = (1280, 720)
+    print('Starting preview')
+    camera.start_preview(fullscreen=True, window=DEFAULT_WINDOW_SIZE)
+    # can be a splash screen?
+    image = load_image('overlay.png')
+    o = camera.add_overlay(image[1].tobytes(), size=image[1].size)
+    o.alpha = 255
+    o.layer = 3
+
     while App[ALIVE]:
         text_overlay()
-    # camera.stop_preview()
-    # exit
+        for event in pygame.event.get():
+            # Did the user hit a key?
+            if event.type == KEYDOWN:
+                # Was it the Escape key? If so, stop the loop.
+                if event.key == K_ESCAPE:
+                    running = False
+
+            # Did the user click the window close button? If so, stop the loop.
+            elif event.type == QUIT:
+                running = False
+
+        screen.fill((255, 255, 255))
+
+        surf = pygame.Surface((50, 50))
+        surf.fill((255, 0, 0))
+        rect = surf.get_rect()
+        screen.blit(surf, (SCREEN_WIDTH/2, SCREEN_HEIGHT/2))
+
+        pygamesScreen = pygame.image.tostring(screen, 'RGBA')
+        o.update(Image.frombytes(pygamesScreen))
+        # pygame.display.flip()
+        # clock.tick(60)
 
 
 if __name__ == "__main__":
