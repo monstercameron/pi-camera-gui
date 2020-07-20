@@ -174,20 +174,21 @@ def main():
         screen.blit(surf, (SCREEN_WIDTH/2, SCREEN_HEIGHT/2))
 
         ss = pygame.Surface((1280, 720), pygame.SRCALPHA)
-        ss.set_colorkey((0, 255, 0))
         ss.blit(screen, (1280, 720))
-        pygamesScreenRaw = pygame.image.tostring(screen, 'RGBA')
+        ss.set_colorkey((0, 255, 0))
+
+        pygamesScreenRaw = pygame.image.tostring(ss, 'RGBA')
 
         if firstLoop:
             o = camera.add_overlay(pygame.image.tostring(
-                ss, 'RGBA'), size=(1280, 720), fullscreen=False, window=DEFAULT_WINDOW_SIZE)
+                pygamesScreenRaw, 'RGBA'), size=(1280, 720), fullscreen=False, window=DEFAULT_WINDOW_SIZE)
             o.alpha = 255
             o.layer = 3
             firstLoop = not firstLoop
         else:
             o.update(pygamesScreenRaw)
         # pygame.display.flip()
-        clock.tick(30)
+        clock.tick(305)
         # App[ALIVE] = False
 
 
