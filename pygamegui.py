@@ -172,8 +172,10 @@ def main():
         rect = surf.get_rect()
         screen.blit(surf, (SCREEN_WIDTH/2, SCREEN_HEIGHT/2))
 
+        ss = pygame.surface((1280, 720), pygame.SRCALPHA)
+        ss.blit(screen, (1280, 720))
+        ss.set_colorkey((0, 255, 0))
         pygamesScreenRaw = pygame.image.tostring(screen, 'RGBA')
-        pygamesScreenRaw = pygamesScreenRaw.set_colorkey((0, 255, 0))
         o.update(pygamesScreenRaw)
         # pygame.display.flip()
         clock.tick(30)
