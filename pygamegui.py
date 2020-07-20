@@ -150,7 +150,7 @@ def main():
     o.layer = 3
 
     dd = 50
-    
+
     while App[ALIVE]:
         text_overlay()
         for event in pygame.event.get():
@@ -164,7 +164,7 @@ def main():
             elif event.type == QUIT:
                 App[ALIVE] = False
 
-        screen.fill((255, 255, 255, 0))
+        screen.fill((0, 255, 0))
         surf = pygame.Surface((dd, 50))
         dd = dd + 1
 
@@ -173,7 +173,7 @@ def main():
         screen.blit(surf, (SCREEN_WIDTH/2, SCREEN_HEIGHT/2))
 
         pygamesScreenRaw = pygame.image.tostring(screen, 'RGBA')
-
+        pygamesScreenRaw = pygamesScreenRaw.set_colorkey((0, 255, 0))
         o.update(pygamesScreenRaw)
         # pygame.display.flip()
         clock.tick(30)

@@ -44,7 +44,7 @@ while running:
         elif event.type == QUIT:
             running = False
 
-    screen.fill((255, 255, 255, 0))
+    # screen.fill((0, 255, 0, 255))
 
     surf = pygame.Surface((50, 50))
     surf.fill((255, 0, 0))
