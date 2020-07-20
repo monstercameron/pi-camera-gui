@@ -169,8 +169,7 @@ def main():
 
         pygamesScreenRaw = pygame.image.tostring(screen, 'RGBA')
 
-        for overlay in o.overlay:
-            print(overlay)
+        print(o.overlays())
 
         # o.update(pygamesScreenRaw)
         # pygame.display.flip()
