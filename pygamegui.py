@@ -166,8 +166,10 @@ def main():
         rect = surf.get_rect()
         screen.blit(surf, (SCREEN_WIDTH/2, SCREEN_HEIGHT/2))
 
-        pygamesScreen = pygame.image.tostring(screen, 'RGBA')
-        o.update(Image.frombytes('RGBA', (1280, 720), pygamesScreen))
+        pygamesScreenRaw = pygame.image.tostring(screen, 'RGBA')
+        pygamesScreen = Image.open(pygamesScreenRaw)
+        # o.update(Image.frombytes('RGBA', (1280, 720), pygamesScreen))
+        o.update(pygamesScreenRaw)
         # pygame.display.flip()
         # clock.tick(60)
 
