@@ -167,11 +167,9 @@ def main():
         screen.blit(surf, (SCREEN_WIDTH/2, SCREEN_HEIGHT/2))
 
         pygamesScreenRaw = pygame.image.tostring(screen, 'RGBA')
-        pygamesScreen = Image.open(pygamesScreenRaw)
-        # o.update(Image.frombytes('RGBA', (1280, 720), pygamesScreen))
         o.update(pygamesScreenRaw)
-        # pygame.display.flip()
-        # clock.tick(60)
+        pygame.display.flip()
+        clock.tick(30)
 
 
 if __name__ == "__main__":
