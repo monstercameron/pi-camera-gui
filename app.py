@@ -110,7 +110,7 @@ def take_photo():
         file = f"{App[IMAGE_DIRECTORY]}/{App[IMAGE_NAME_SCHEME]}{App[IMAGE_COUNT]}.{App[IMAGE_FORMAT]}"
         print('Taking photo: ', file)
         camera.annotate_text = ''
-        camera.capture(file)
+        camera.capture(file,quality=100)
         print('took photo', file)
     except:
         print('error')
