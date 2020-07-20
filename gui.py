@@ -1,6 +1,6 @@
 # Import the pygame module
 import pygame
-from numpy import savetxt
+from functions import *
 
 # Import pygame.locals for easier access to key coordinates
 # Updated to conform to flake8 and black standards
@@ -18,17 +18,39 @@ from pygame.locals import (
 pygame.init()
 
 # Define constants for the screen width and height
-SCREEN_WIDTH = 800
-SCREEN_HEIGHT = 600
+SCREEN_WIDTH = 1280
+SCREEN_HEIGHT = 720
 
 # Create the screen object
 # The size is determined by the constant SCREEN_WIDTH and SCREEN_HEIGHT
 screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
 
+# create a font object.
+# 1st parameter is the font file
+# which is present in pygame.
+# 2nd parameter is size of the font
+font = pygame.font.Font('freesansbold.ttf', 32)
+
+# create a text suface object,
+# on which text is drawn on it.
+textColor = (255, 255, 255)
+highlighted = (0, 0, 0)
+
+# test values
+values = {}
+values['diskSpace'] = 1000 # MBs
+values['format'] = 'jpg'
+values['stillCompression'] = 'fine'
+
+# create a list of all the text on the GUI
+textList = {}
+textList.append(('quality', f""))
+
+
+layer = pygame.Surface((1280, 720))  # , pygame.SRCALPHA)
+
 # Variable to keep the main loop running
 running = True
-
-writeOnce = True
 
 # Main loop
 while running:
@@ -44,16 +66,14 @@ while running:
         elif event.type == QUIT:
             running = False
 
-    # screen.fill((0, 255, 0, 255))
+    screen.fill((255, 255, 255))
 
-    surf = pygame.Surface((50, 50))
-    surf.fill((255, 0, 0))
-    rect = surf.get_rect()
-    screen.blit(surf, (SCREEN_WIDTH/2, SCREEN_HEIGHT/2))
+    # draw rect
+    rect = pygame.draw.rect(
+        layer, blue, ((SCREEN_WIDTH//2, SCREEN_HEIGHT//2), (50, 50)), 1)
 
-    if writeOnce:
-        # image = pygame.image.tostring(screen, 'RGBA')
-        # print(image)
-        writeOnce = not writeOnce
+    screen.blit(layer, (0, 0))
+
+    screen.blit(text, ((SCREEN_WIDTH//2)-(textRect.width//2), 0))
 
     pygame.display.flip()

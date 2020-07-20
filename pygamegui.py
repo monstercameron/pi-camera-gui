@@ -163,9 +163,7 @@ def main():
             elif event.type == QUIT:
                 App[ALIVE] = False
 
-        screen.fill((0, 255, 0))
-        surf = pygame.Surface((dd, 50))
-        dd = dd + 1
+        surf = pygame.Surface((50, 50))
 
         surf.fill((255, 0, 0))
         rect = surf.get_rect()
@@ -173,7 +171,6 @@ def main():
 
         ss = pygame.Surface((1280, 720), pygame.SRCALPHA)
         ss.blit(surf, (SCREEN_WIDTH/2, SCREEN_HEIGHT/2))
-        # ss.set_colorkey((0, 255, 0))
 
         pygamesScreenRaw = pygame.image.tostring(ss, 'RGBA')
 

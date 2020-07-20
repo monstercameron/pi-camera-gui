@@ -29,7 +29,7 @@ def load_image(image):
 
 def preview():
     print('Pi Camera Gui Started')
-    camera.resolution = (1280, 720)
+    camera.resolution = (4056, 3040)
     print('Starting preview')
     camera.start_preview(fullscreen=True, window=DEFAULT_WINDOW_SIZE)
     image = load_image('overlay.png')
