@@ -17,6 +17,7 @@ from pygame.locals import (
     QUIT,
 )
 pygame.init()
+clock = pygame.time.Clock()
 SCREEN_WIDTH = 1280
 SCREEN_HEIGHT = 720
 screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
@@ -168,8 +169,8 @@ def main():
 
         pygamesScreenRaw = pygame.image.tostring(screen, 'RGBA')
         o.update(pygamesScreenRaw)
-        pygame.display.flip()
-        # clock.tick(30)
+        # pygame.display.flip()
+        clock.tick(24)
 
 
 if __name__ == "__main__":
