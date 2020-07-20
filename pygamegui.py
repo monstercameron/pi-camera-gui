@@ -180,8 +180,8 @@ def main():
         pygamesScreenRaw = pygame.image.tostring(ss, 'RGBA')
 
         if firstLoop:
-            o = camera.add_overlay(pygame.image.tostring(
-                pygamesScreenRaw, 'RGBA'), size=(1280, 720), fullscreen=False, window=DEFAULT_WINDOW_SIZE)
+            o = camera.add_overlay(pygamesScreenRaw, size=(
+                1280, 720), fullscreen=False, window=DEFAULT_WINDOW_SIZE)
             o.alpha = 255
             o.layer = 3
             firstLoop = not firstLoop
