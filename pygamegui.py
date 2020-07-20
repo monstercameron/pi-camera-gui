@@ -142,14 +142,12 @@ def main():
     print('Starting preview')
     camera.start_preview(fullscreen=False, window=DEFAULT_WINDOW_SIZE)
     # can be a splash screen?
-    image = load_image('overlay.png')
+    # image = load_image('overlay.png')
     # o = camera.add_overlay(pygame.image.tostring(
     #     screen, 'RGBA'), size=(1280, 720))
     # o = camera.add_overlay(image[1].tobytes(), size=image[1].size)
     dd = 50
-
     firstLoop = True
-
     o = None
 
     while App[ALIVE]:
@@ -174,8 +172,8 @@ def main():
         screen.blit(surf, (SCREEN_WIDTH/2, SCREEN_HEIGHT/2))
 
         ss = pygame.Surface((1280, 720), pygame.SRCALPHA)
-        ss.blit(screen, (0, 0))
-        ss.set_colorkey((0, 255, 0))
+        ss.blit(surf, (SCREEN_WIDTH/2, SCREEN_HEIGHT/2))
+        # ss.set_colorkey((0, 255, 0))
 
         pygamesScreenRaw = pygame.image.tostring(ss, 'RGBA')
 
@@ -188,7 +186,7 @@ def main():
         else:
             o.update(pygamesScreenRaw)
         # pygame.display.flip()
-        clock.tick(305)
+        clock.tick(30)
         # App[ALIVE] = False
 
 
