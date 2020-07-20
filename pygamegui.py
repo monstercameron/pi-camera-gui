@@ -143,13 +143,15 @@ def main():
     camera.start_preview(fullscreen=False, window=DEFAULT_WINDOW_SIZE)
     # can be a splash screen?
     image = load_image('overlay.png')
-    o = camera.add_overlay(pygame.image.tostring(
-        screen, 'RGBA'), size=(1280, 720))
+    # o = camera.add_overlay(pygame.image.tostring(
+    #     screen, 'RGBA'), size=(1280, 720))
     # o = camera.add_overlay(image[1].tobytes(), size=image[1].size)
     o.alpha = 255
     o.layer = 3
 
     dd = 50
+
+    firstLoop = True
 
     while App[ALIVE]:
         text_overlay()
@@ -172,11 +174,17 @@ def main():
         rect = surf.get_rect()
         screen.blit(surf, (SCREEN_WIDTH/2, SCREEN_HEIGHT/2))
 
-        ss = pygame.surface((1280, 720), pygame.SRCALPHA)
-        ss.blit(screen, (1280, 720))
+        ss = pygame.Surface((1280, 720), pygame.SRCALPHA)
         ss.set_colorkey((0, 255, 0))
+        ss.blit(screen, (1280, 720))
         pygamesScreenRaw = pygame.image.tostring(screen, 'RGBA')
-        o.update(pygamesScreenRaw)
+
+        if firstLoop:
+            o = camera.add_overlay(pygame.image.tostring(
+                ss, 'RGBA'), size=(1280, 720), fullscreen=False, window=DEFAULT_WINDOW_SIZE)
+            firstLoop = not  firstLoop
+        else:
+            o.update(pygamesScreenRaw)
         # pygame.display.flip()
         clock.tick(30)
         # App[ALIVE] = False
