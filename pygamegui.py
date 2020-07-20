@@ -152,6 +152,8 @@ def main():
     dd = 50
 
     firstLoop = True
+    
+    o = None
 
     while App[ALIVE]:
         text_overlay()
@@ -182,7 +184,7 @@ def main():
         if firstLoop:
             o = camera.add_overlay(pygame.image.tostring(
                 ss, 'RGBA'), size=(1280, 720), fullscreen=False, window=DEFAULT_WINDOW_SIZE)
-            firstLoop = not  firstLoop
+            firstLoop = not firstLoop
         else:
             o.update(pygamesScreenRaw)
         # pygame.display.flip()
