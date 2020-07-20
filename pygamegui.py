@@ -163,7 +163,7 @@ def main():
             elif event.type == QUIT:
                 App[ALIVE] = False
 
-        screen.fill((255, 255, 255))
+        # screen.fill((255, 255, 255))
         surf = pygame.Surface((dd, 50))
         dd = dd + 1
 
@@ -175,7 +175,7 @@ def main():
 
         o.update(pygamesScreenRaw)
         # pygame.display.flip()
-        clock.tick(24)
+        clock.tick(30)
         # App[ALIVE] = False
 
 
