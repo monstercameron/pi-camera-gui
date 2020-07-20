@@ -17,8 +17,8 @@ from pygame.locals import (
     QUIT,
 )
 pygame.init()
-SCREEN_WIDTH = 800
-SCREEN_HEIGHT = 600
+SCREEN_WIDTH = 1280
+SCREEN_HEIGHT = 720
 screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
 App[IMAGE_DIRECTORY] = 'images'
 camera = picamera.PiCamera()
@@ -167,7 +167,7 @@ def main():
         screen.blit(surf, (SCREEN_WIDTH/2, SCREEN_HEIGHT/2))
 
         pygamesScreen = pygame.image.tostring(screen, 'RGBA')
-        o.update(Image.frombytes(pygamesScreen))
+        o.update(Image.frombytes('RGBA', (1280, 720), pygamesScreen))
         # pygame.display.flip()
         # clock.tick(60)
 
