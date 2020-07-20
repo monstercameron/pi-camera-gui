@@ -171,9 +171,7 @@ def main():
 
         pygamesScreenRaw = pygame.image.tostring(screen, 'RGBA')
 
-        print(o.overlays())
-
-        # o.update(pygamesScreenRaw)
+        o.update(pygamesScreenRaw)
         # pygame.display.flip()
         clock.tick(24)
         App[ALIVE] = False
