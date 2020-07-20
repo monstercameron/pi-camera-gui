@@ -169,7 +169,7 @@ def main():
         pygamesScreenRaw = pygame.image.tostring(screen, 'RGBA')
         o.update(pygamesScreenRaw)
         pygame.display.flip()
-        clock.tick(30)
+        # clock.tick(30)
 
 
 if __name__ == "__main__":
