@@ -143,7 +143,9 @@ def main():
     camera.start_preview(fullscreen=False, window=DEFAULT_WINDOW_SIZE)
     # can be a splash screen?
     image = load_image('overlay.png')
-    o = camera.add_overlay(image[1].tobytes(), size=image[1].size)
+    o = camera.add_overlay(pygame.image.tostring(
+        screen, 'RGBA'), size=(1280, 720))
+    # o = camera.add_overlay(image[1].tobytes(), size=image[1].size)
     o.alpha = 255
     o.layer = 3
 
