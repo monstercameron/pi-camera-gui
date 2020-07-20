@@ -149,6 +149,7 @@ def main():
     o.alpha = 255
     o.layer = 3
 
+    dd = 50
     while App[ALIVE]:
         text_overlay()
         for event in pygame.event.get():
@@ -156,14 +157,13 @@ def main():
             if event.type == KEYDOWN:
                 # Was it the Escape key? If so, stop the loop.
                 if event.key == K_ESCAPE:
-                    running = False
+                    App[ALIVE] = False
 
             # Did the user click the window close button? If so, stop the loop.
             elif event.type == QUIT:
-                running = False
+                App[ALIVE] = False
 
         screen.fill((255, 255, 255))
-        dd = 50
         surf = pygame.Surface((dd, 50))
         dd = dd + 1
 
