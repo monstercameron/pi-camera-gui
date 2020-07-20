@@ -168,9 +168,14 @@ def main():
         screen.blit(surf, (SCREEN_WIDTH/2, SCREEN_HEIGHT/2))
 
         pygamesScreenRaw = pygame.image.tostring(screen, 'RGBA')
-        o.update(pygamesScreenRaw)
+
+        for overlay in o.overlay:
+            print(overlay)
+
+        # o.update(pygamesScreenRaw)
         # pygame.display.flip()
         clock.tick(24)
+        App[ALIVE] = False
 
 
 if __name__ == "__main__":
