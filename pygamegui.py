@@ -163,8 +163,10 @@ def main():
                 running = False
 
         screen.fill((255, 255, 255))
+        dd = 50
+        surf = pygame.Surface((dd, 50))
+        dd = dd + 1
 
-        surf = pygame.Surface((50, 50))
         surf.fill((255, 0, 0))
         rect = surf.get_rect()
         screen.blit(surf, (SCREEN_WIDTH/2, SCREEN_HEIGHT/2))
@@ -174,7 +176,7 @@ def main():
         o.update(pygamesScreenRaw)
         # pygame.display.flip()
         clock.tick(24)
-        App[ALIVE] = False
+        # App[ALIVE] = False
 
 
 if __name__ == "__main__":
