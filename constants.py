@@ -12,7 +12,7 @@ SHUTTER_SPEED = 'shutter_speed'
 SHUTTER_MINMAX = (100, 32000)
 ISO = 'iso'
 ISO_MINMAX = (0, 1600)
-DEFAULT_WINDOW_SIZE = (10, 10, 512, 512)
+DEFAULT_WINDOW_SIZE = (10, 10, 1280, 720)
 AWB = 'awb'
 AWB_MODES = ['off', 'auto', 'sunlight', 'cloudy', 'shade',
              'tungsten', 'fluorescent', 'incandescent', 'flash', 'horizon']

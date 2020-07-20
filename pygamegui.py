@@ -139,7 +139,7 @@ def main():
     print('Pi Camera Gui Started')
     camera.resolution = (1280, 720)
     print('Starting preview')
-    camera.start_preview(fullscreen=True, window=DEFAULT_WINDOW_SIZE)
+    camera.start_preview(fullscreen=False, window=DEFAULT_WINDOW_SIZE)
     # can be a splash screen?
     image = load_image('overlay.png')
     o = camera.add_overlay(image[1].tobytes(), size=image[1].size)
