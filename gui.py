@@ -71,6 +71,13 @@ layer = pygame.Surface((1280, 720), pygame.SRCALPHA)
 
 # Variable to keep the main loop running
 running = True
+firstLoop = True
+
+# startingthe camera preview
+# camera.start_preview(fullscreen=False, window=App[DEFAULT_WINDOW_SIZE])
+
+# initializing overlay variable
+o = None
 
 # Main loop
 while running:
@@ -119,6 +126,16 @@ while running:
     #  test updating a value
     App[DISK_SPACE] = App[DISK_SPACE] + 1
     print(App[DISK_SPACE])
+
+    # pygamesScreenRaw = pygame.image.tostring(layer, 'RGBA')
+    # if firstLoop:
+    #     o = camera.add_overlay(pygamesScreenRaw, size=(
+    #         1280, 720), fullscreen=False, window=DEFAULT_WINDOW_SIZE)
+    #     o.alpha = 255
+    #     o.layer = 3
+    #     firstLoop = not firstLoop
+    # else:
+    #     o.update(pygamesScreenRaw)
 
     screen.blit(layer, (0, 0))
     pygame.display.flip()
