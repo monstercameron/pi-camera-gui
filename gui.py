@@ -72,7 +72,7 @@ while App[ALIVE]:
             if event.key == K_ESCAPE:
                 App[ALIVE] = False
             if event.key == K_RETURN:
-                camera.resolution(App[IMAGE_RESOLUTION])
+                camera.resolution = App[IMAGE_RESOLUTION]
                 takePhoto(camera, App, IMAGE_FILE_PATH, IMAGE_COUNT)
             if event.key == K_UP:
                 App[MENU_HILITE] = incrementAndCycle(
