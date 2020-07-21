@@ -82,11 +82,8 @@ while App[ALIVE]:
                     1, App[MENU_HILITE], (0, len(textList.keys())))
             if event.key == K_LEFT:
                 menuActions('camera', menuKey, 'left')
-                pass
             if event.key == K_RIGHT:
                 menuActions('camera', menuKey, 'right')
-                pass
-
         # Did the user click the window close button? If so, stop the loop.
         elif event.type == QUIT:
             App[ALIVE] = False

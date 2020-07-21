@@ -84,6 +84,23 @@ def adjustByFactor(app, factor, property, min_max):
         print('Error')
 
 
+def adjustByFactor2(factor, value, range):
+    if factor > 0:
+        updated_value = value * factor
+        if updated_value > range[1]:
+            return range[1]
+        else:
+            return updated_value
+    elif factor < 0:
+        updated_value = value // abs(factor)
+        if updated_value < range[0]:
+            return range[0]
+        else:
+            return updated_value
+    else:
+        print('Error')
+
+
 def traverseList(current, direction, list):
     if direction == 'next':
         index = list.index(current)
@@ -106,6 +123,11 @@ def incrementAndCycle(step, current, minMax):
     if current + step >= minMax[1]:
         return nextStep - minMax[1]
     elif current + step < minMax[0]:
-        return minMax[1] - nextStep -1
+        return minMax[1] - nextStep - 1
     else:
         return nextStep
+
+
+def save_to_app(app, property, value):
+    app[property] = value
+    return app[property]
