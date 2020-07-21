@@ -55,7 +55,13 @@ layer = pygame.Surface((1280, 720), pygame.SRCALPHA)
 firstLoop = True
 
 # startingthe camera preview
-camera.start_preview(fullscreen=False, window=App[DEFAULT_WINDOW_SIZE])
+
+
+def startCamera(): return camera.start_preview(
+    fullscreen=False, window=App[DEFAULT_WINDOW_SIZE])
+
+
+startCamera()
 
 # initializing overlay variable
 o = None
@@ -74,6 +80,8 @@ while App[ALIVE]:
             if event.key == K_RETURN:
                 camera.resolution = App[IMAGE_RESOLUTION]
                 takePhoto(camera, App, IMAGE_FILE_PATH, IMAGE_COUNT)
+                camera.resolution = (
+                    App[DEFAULT_WINDOW_SIZE][2], App[DEFAULT_WINDOW_SIZE][3])
             if event.key == K_UP:
                 App[MENU_HILITE] = incrementAndCycle(
                     -1, App[MENU_HILITE], (0, len(textList.keys())-1))
