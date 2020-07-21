@@ -72,8 +72,8 @@ while App[ALIVE]:
             if event.key == K_ESCAPE:
                 App[ALIVE] = False
             if event.key == K_RETURN:
-                pass
-                cctakePhoto(camera, App, IMAGE_FILE_PATH, IMAGE_COUNT)
+                camera.resolution(App[IMAGE_RESOLUTION])
+                takePhoto(camera, App, IMAGE_FILE_PATH, IMAGE_COUNT)
             if event.key == K_UP:
                 App[MENU_HILITE] = incrementAndCycle(
                     -1, App[MENU_HILITE], (0, len(textList.keys())-1))
