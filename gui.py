@@ -21,7 +21,7 @@ camera.shutter_speed = App[SHUTTER_SPEED]
 camera.iso = App[ISO]
 
 # check if path exists
-if not path.exists(App[IMAGE_FILE_PATH]):
+if not path.exists(App[IMAGE_DIRECTORY]):
     mkdir(App[IMAGE_DIRECTORY])
 
 # Import pygame.locals for easier access to key coordinates
