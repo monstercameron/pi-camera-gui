@@ -14,10 +14,10 @@ import time
 from functions import *
 from constants import *
 
-# import picamera
-# camera = picamera.PiCamera()
-# camera.shutter_speed = App[SHUTTER_SPEED]
-# camera.iso = App[ISO]
+import picamera
+camera = picamera.PiCamera()
+camera.shutter_speed = App[SHUTTER_SPEED]
+camera.iso = App[ISO]
 
 # Import pygame.locals for easier access to key coordinates
 # Updated to conform to flake8 and black standards
@@ -55,7 +55,7 @@ layer = pygame.Surface((1280, 720), pygame.SRCALPHA)
 firstLoop = True
 
 # startingthe camera preview
-# camera.start_preview(fullscreen=False, window=App[DEFAULT_WINDOW_SIZE])
+camera.start_preview(fullscreen=False, window=App[DEFAULT_WINDOW_SIZE])
 
 # initializing overlay variable
 o = None
@@ -73,7 +73,7 @@ while App[ALIVE]:
                 App[ALIVE] = False
             if event.key == K_RETURN:
                 pass
-                # takePhoto(camera, App, IMAGE_FILE_PATH, IMAGE_COUNT)
+                cctakePhoto(camera, App, IMAGE_FILE_PATH, IMAGE_COUNT)
             if event.key == K_UP:
                 App[MENU_HILITE] = incrementAndCycle(
                     -1, App[MENU_HILITE], (0, len(textList.keys())-1))
@@ -81,9 +81,9 @@ while App[ALIVE]:
                 App[MENU_HILITE] = incrementAndCycle(
                     1, App[MENU_HILITE], (0, len(textList.keys())))
             if event.key == K_LEFT:
-                menuActions('camera', menuKey, 'left')
+                menuActions(camera, menuKey, 'left')
             if event.key == K_RIGHT:
-                menuActions('camera', menuKey, 'right')
+                menuActions(camera, menuKey, 'right')
         # Did the user click the window close button? If so, stop the loop.
         elif event.type == QUIT:
             App[ALIVE] = False
@@ -120,16 +120,16 @@ while App[ALIVE]:
     # App[DISK_SPACE] = App[DISK_SPACE] + 1
     # print(App[MENU_HILITE])
 
-    # pygamesScreenRaw = pygame.image.tostring(layer, 'RGBA')
-    # if firstLoop:
-    #     o = camera.add_overlay(pygamesScreenRaw, size=(
-    #         1280, 720), fullscreen=False, window=App[DEFAULT_WINDOW_SIZE])
-    #     o.alpha = 255
-    #     o.layer = 3
-    #     firstLoop = not firstLoop
-    # else:
-    #     o.update(pygamesScreenRaw)
+    pygamesScreenRaw = pygame.image.tostring(layer, 'RGBA')
+    if firstLoop:
+        o = camera.add_overlay(pygamesScreenRaw, size=(
+            1280, 720), fullscreen=False, window=App[DEFAULT_WINDOW_SIZE])
+        o.alpha = 255
+        o.layer = 3
+        firstLoop = not firstLoop
+    else:
+        o.update(pygamesScreenRaw)
 
-    screen.blit(layer, (0, 0))
-    pygame.display.flip()
+    # screen.blit(layer, (0, 0))
+    # pygame.display.flip()
     clock.tick(15)

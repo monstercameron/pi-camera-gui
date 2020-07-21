@@ -56,13 +56,13 @@ def menuActions(camera, key, direction):
             App[ISO] = adjustByFactor2(2, App[ISO], App[ISO_RANGE])
         elif direction == 'left':
             App[ISO] = adjustByFactor2(-2, App[ISO], App[ISO_RANGE])
-       camera.iso = App[ISO]
+        camera.iso = App[ISO]
     elif key == AWB:
         if direction == 'right':
                App[AWB] = traverseList(App[AWB], 'next', App[AWB_MODE_VALUES])
         elif direction == 'left':
             App[AWB] = traverseList(App[AWB], 'previous', App[AWB_MODE_VALUES])
-       camera.awb_mode = App[AWB]
+        camera.awb_mode = App[AWB]
     elif key == SHUTTER_SPEED:
         if direction == 'right':
             App[SHUTTER_SPEED] = adjustByFactor2(
@@ -70,7 +70,7 @@ def menuActions(camera, key, direction):
         elif direction == 'left':
             App[SHUTTER_SPEED] = adjustByFactor2(-2,
                                                  App[SHUTTER_SPEED], App[SHUTTER_RANGE])
-       camera.shutter_speed = App[SHUTTER_SPEED]
+        camera.shutter_speed = App[SHUTTER_SPEED]
     elif key == CAMERA_CAPTURE_MODE:
         if direction == 'right':
             App[CAMERA_CAPTURE_MODE] = traverseList(
@@ -92,4 +92,4 @@ def menuActions(camera, key, direction):
         elif direction == 'left':
             App[EXPOSURE] = traverseList(
                 App[EXPOSURE], 'previous', App[EXPOSURE_MODE_VALUE])
-       camera.exposure_mode = App[EXPOSURE]
+        camera.exposure_mode = App[EXPOSURE]
