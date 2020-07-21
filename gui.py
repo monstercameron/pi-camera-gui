@@ -22,7 +22,7 @@ camera.iso = App[ISO]
 
 # check if path exists
 if not path.exists(App[IMAGE_FILE_PATH]):
-    mkdir(App[IMAGE_FILE_PATH])
+    mkdir(App[IMAGE_DIRECTORY])
 
 # Import pygame.locals for easier access to key coordinates
 # Updated to conform to flake8 and black standards
