@@ -11,6 +11,7 @@ from pygame.locals import (
 )
 import pygame
 import time
+from os import path, mkdir
 from functions import *
 from constants import *
 
@@ -18,6 +19,10 @@ import picamera
 camera = picamera.PiCamera()
 camera.shutter_speed = App[SHUTTER_SPEED]
 camera.iso = App[ISO]
+
+# check if path exists
+if not path.exists(App[IMAGE_FILE_PATH]):
+    mkdir(App[IMAGE_FILE_PATH])
 
 # Import pygame.locals for easier access to key coordinates
 # Updated to conform to flake8 and black standards
