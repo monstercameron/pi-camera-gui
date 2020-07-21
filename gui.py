@@ -14,7 +14,7 @@ import time
 from functions import *
 from constants import *
 import shutil
-# import picamera
+import picamera
 
 total, used, free = shutil.disk_usage("/")
 # print("Total: %d GiB" % (total // (2**30)))
@@ -23,9 +23,9 @@ total, used, free = shutil.disk_usage("/")
 App[DISK_SPACE] = free // (2**30)
 
 
-# camera = picamera.PiCamera()
-# camera.shutter_speed = App[SHUTTER_SPEED]
-# camera.iso = App[ISO]
+camera = picamera.PiCamera()
+camera.shutter_speed = App[SHUTTER_SPEED]
+camera.iso = App[ISO]
 
 # Import pygame.locals for easier access to key coordinates
 # Updated to conform to flake8 and black standards
@@ -74,7 +74,7 @@ running = True
 firstLoop = True
 
 # startingthe camera preview
-# camera.start_preview(fullscreen=False, window=App[DEFAULT_WINDOW_SIZE])
+camera.start_preview(fullscreen=False, window=App[DEFAULT_WINDOW_SIZE])
 
 # initializing overlay variable
 o = None
@@ -90,8 +90,8 @@ while running:
                 running = False
             # Was it the Escape key? If so, stop the loop.
             if event.key == K_RETURN:
-                pass
-                # takePhoto(camera, App, IMAGE_FILE_PATH, IMAGE_COUNT)
+                # pass
+                takePhoto(camera, App, IMAGE_FILE_PATH, IMAGE_COUNT)
         # Did the user click the window close button? If so, stop the loop.
         elif event.type == QUIT:
             running = False
@@ -127,15 +127,15 @@ while running:
     App[DISK_SPACE] = App[DISK_SPACE] + 1
     print(App[DISK_SPACE])
 
-    # pygamesScreenRaw = pygame.image.tostring(layer, 'RGBA')
-    # if firstLoop:
-    #     o = camera.add_overlay(pygamesScreenRaw, size=(
-    #         1280, 720), fullscreen=False, window=DEFAULT_WINDOW_SIZE)
-    #     o.alpha = 255
-    #     o.layer = 3
-    #     firstLoop = not firstLoop
-    # else:
-    #     o.update(pygamesScreenRaw)
+    pygamesScreenRaw = pygame.image.tostring(layer, 'RGBA')
+    if firstLoop:
+        o = camera.add_overlay(pygamesScreenRaw, size=(
+            1280, 720), fullscreen=False, window=App[DEFAULT_WINDOW_SIZE])
+        o.alpha = 255
+        o.layer = 3
+        firstLoop = not firstLoop
+    else:
+        o.update(pygamesScreenRaw)
 
     screen.blit(layer, (0, 0))
     pygame.display.flip()
