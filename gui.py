@@ -13,19 +13,11 @@ import pygame
 import time
 from functions import *
 from constants import *
-import shutil
-import picamera
 
-total, used, free = shutil.disk_usage("/")
-# print("Total: %d GiB" % (total // (2**30)))
-# print("Used: %d GiB" % (used // (2**30)))
-# print("Free: %d GiB" % (free // (2**30)))
-App[DISK_SPACE] = free // (2**30)
-
-
-camera = picamera.PiCamera()
-camera.shutter_speed = App[SHUTTER_SPEED]
-camera.iso = App[ISO]
+# import picamera
+# camera = picamera.PiCamera()
+# camera.shutter_speed = App[SHUTTER_SPEED]
+# camera.iso = App[ISO]
 
 # Import pygame.locals for easier access to key coordinates
 # Updated to conform to flake8 and black standards
@@ -51,61 +43,65 @@ font = pygame.font.Font('freesansbold.ttf', 24)
 # create a text suface object,
 # on which text is drawn on it.
 textColor = (255, 255, 255)
+textBackground = (0, 0, 0, 125)
 highlightedTextColor = (0, 0, 0)
 highlighted = (255, 255, 255)
 padding = 20
-
-# create a list of all the text on the GUI
-textList = {}
-textList['file'] = lambda: f"{int(App[DISK_SPACE]//0.00025)}|{App[DISK_SPACE]}GB {product(App[IMAGE_RESOLUTION])//1000000}MP {App[IMAGE_FORMAT]} {App[IMAGE_COMPRESSION]}"
-textList[CAMERA_CAPTURE_MODE] = lambda: f"{App[CAMERA_CAPTURE_MODE_VALUES][App[CAMERA_CAPTURE_MODE]]} MODE"
-textList[METERING_MODE] = lambda: f"{App[METERING_MODE]} METERING"
-textList[AWB] = lambda: f"{App[AWB].upper()} WB"
-textList[IMAGE_DR_COMPRESSION] = lambda: f"DRC {App[IMAGE_DR_COMPRESSION].upper()}"
-textList[EXPOSURE] = lambda: f"EXPOSURE {App[EXPOSURE].upper()}"
-textList[ISO] = lambda: f"{App[ISO]} ISO"
-
 
 # creates transparent surface to blit all other surfaces to
 layer = pygame.Surface((1280, 720), pygame.SRCALPHA)
 
 # Variable to keep the main loop running
-running = True
 firstLoop = True
 
 # startingthe camera preview
-camera.start_preview(fullscreen=False, window=App[DEFAULT_WINDOW_SIZE])
+# camera.start_preview(fullscreen=False, window=App[DEFAULT_WINDOW_SIZE])
 
 # initializing overlay variable
 o = None
 
 # Main loop
-while running:
+while App[ALIVE]:
+    # get  current  menu key
+    menuKey = list(textList.keys())[App[MENU_HILITE]]
     # Look at every event in the queue
     for event in pygame.event.get():
         # Did the user hit a key?
         if event.type == KEYDOWN:
             # Was it the Escape key? If so, stop the loop.
             if event.key == K_ESCAPE:
-                running = False
-            # Was it the Escape key? If so, stop the loop.
+                App[ALIVE] = False
             if event.key == K_RETURN:
-                # pass
-                takePhoto(camera, App, IMAGE_FILE_PATH, IMAGE_COUNT)
+                pass
+                # takePhoto(camera, App, IMAGE_FILE_PATH, IMAGE_COUNT)
+            if event.key == K_UP:
+                App[MENU_HILITE] = incrementAndCycle(
+                    -1, App[MENU_HILITE], (0, len(textList.keys())-1))
+            if event.key == K_DOWN:
+                App[MENU_HILITE] = incrementAndCycle(
+                    1, App[MENU_HILITE], (0, len(textList.keys())))
+            if event.key == K_LEFT:
+                menuActions('camera', menuKey, 'left')
+                pass
+            if event.key == K_RIGHT:
+                menuActions('camera', menuKey, 'right')
+                pass
+
         # Did the user click the window close button? If so, stop the loop.
         elif event.type == QUIT:
-            running = False
+            App[ALIVE] = False
 
     # makes the GUI repr white
+    # screen.fill((255, 255, 255))
     screen.fill((0, 0, 0))
     layer.fill((0, 0, 0, 0))
 
     # blitting all text onto layer
     for key in textList:
-        background = None
+        background = textBackground
         currentTextColor = textColor
         currentIndex = list(textList.keys()).index(key)
-        if currentIndex == 0:
+        if currentIndex == App[MENU_HILITE]:
             background = highlighted
             currentTextColor = highlightedTextColor
             nextItemHpos = 0
@@ -124,18 +120,18 @@ while running:
         layer, (128, 128, 128), ((SCREEN_WIDTH//2-(meterWidth//2), SCREEN_HEIGHT//2-(meterWidth//2)), (meterWidth, meterWidth)), 3)
 
     #  test updating a value
-    App[DISK_SPACE] = App[DISK_SPACE] + 1
-    print(App[DISK_SPACE])
+    # App[DISK_SPACE] = App[DISK_SPACE] + 1
+    # print(App[MENU_HILITE])
 
-    pygamesScreenRaw = pygame.image.tostring(layer, 'RGBA')
-    if firstLoop:
-        o = camera.add_overlay(pygamesScreenRaw, size=(
-            1280, 720), fullscreen=False, window=App[DEFAULT_WINDOW_SIZE])
-        o.alpha = 255
-        o.layer = 3
-        firstLoop = not firstLoop
-    else:
-        o.update(pygamesScreenRaw)
+    # pygamesScreenRaw = pygame.image.tostring(layer, 'RGBA')
+    # if firstLoop:
+    #     o = camera.add_overlay(pygamesScreenRaw, size=(
+    #         1280, 720), fullscreen=False, window=App[DEFAULT_WINDOW_SIZE])
+    #     o.alpha = 255
+    #     o.layer = 3
+    #     firstLoop = not firstLoop
+    # else:
+    #     o.update(pygamesScreenRaw)
 
     screen.blit(layer, (0, 0))
     pygame.display.flip()
