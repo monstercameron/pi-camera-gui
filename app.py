@@ -86,6 +86,7 @@ def init():
     layer = pygame.Surface((1280, 720), pygame.SRCALPHA)
 
     # Variable to keep the main loop running
+    global firstLoop
     firstLoop = True
 
     # setting up camera
