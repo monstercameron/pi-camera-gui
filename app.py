@@ -174,6 +174,7 @@ def main():
 
         if not pcDevMode:
             pygamesScreenRaw = pygame.image.tostring(layer, 'RGBA')
+            global firstLoop
             if firstLoop:
                 o = camera.add_overlay(pygamesScreenRaw, size=(
                     1280, 720), fullscreen=False, window=App[DEFAULT_WINDOW_SIZE])
