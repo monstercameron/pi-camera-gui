@@ -1,7 +1,4 @@
 # Import the pygame module
-pcDevMode = True
-if not pcDevMode:
-    import picamera
 from pygame.locals import (
     K_UP,
     K_DOWN,
@@ -17,6 +14,8 @@ import time
 from os import path, mkdir
 from functions import *
 from constants import *
+if not pcDevMode:
+    import picamera
 
 clock = None
 screen  = None
