@@ -131,3 +131,9 @@ def incrementAndCycle(step, current, minMax):
 def save_to_app(app, property, value):
     app[property] = value
     return app[property]
+
+
+def howManyPhotos(storageGB, resoltuion):
+    storageMB = storageGB  * 1024
+    imageMB = product(resoltuion) * 8 / 1024 / 1024 / 8
+    return storageMB / imageMB
