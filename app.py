@@ -91,6 +91,7 @@ def init():
 
     # setting up camera
     if not pcDevMode:
+        global camera
         camera = picamera.PiCamera()
         camera.shutter_speed = App[SHUTTER_SPEED]
         camera.iso = App[ISO]
@@ -106,10 +107,6 @@ def init():
 
     if not pcDevMode:
         startCamera()
-
-    # initializing overlay variable
-    global o
-    o = None
 
 def main():
     # Main loop
