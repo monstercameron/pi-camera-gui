@@ -10,6 +10,7 @@ If you have experience to  PyGame and want to contribute, that would be awesome.
 * Release 1:
     * expose all camera settings
     * adjust refresh frequency
+    * create menus
     * clean up function side effects
     * clean up code, simplify where necessary
     * Explore feature set and document limits
