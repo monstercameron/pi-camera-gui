@@ -20,18 +20,18 @@ def product(tuple):
     return prod
 
 
-def takePhoto(camera, app, fileFn, image_count_key):
+def takePhoto(camera, filePath, interator):
     try:
-        file = incrementPhotoIfExists(app, fileFn, image_count_key)
-        camera.capture(file, quality=100)
+        file = incrementPhotoIfExists(filePath, interator)
+        camera.capture(file)
     except:
         print('error')
 
 
-def incrementPhotoIfExists(app, fileFn, image_count_key):
-    while path.exists(app[fileFn]()):
-        app[image_count_key] = app[image_count_key] + 1
-    return app[fileFn]()
+def incrementPhotoIfExists(filePath, interator):
+    while path.exists(filePath['value']()):
+        interator['value'] = interator['value'] + 1
+    return filePath['value']()
 
 
 def adjustByIncrement(app, increment, property, min_max):
@@ -101,7 +101,24 @@ def adjustByFactor2(factor, value, range):
         print('Error')
 
 
-def traverseList(current, direction, list):
+def traverseList2(current, direction, list):
+    if direction == 'next':
+        index = list.index(current)
+        if index + 1 > len(list) - 1:
+            index = 0
+            return list[index]
+        else:
+            return list[index+1]
+    elif direction == 'previous':
+        index = list.index(current)
+        if index - 1 < 0:
+            index = len(list)-1
+            return list[index]
+        else:
+            return list[index-1]
+
+
+def traverseList2(current, direction, list):
     if direction == 'next':
         index = list.index(current)
         if index + 1 > len(list) - 1:
@@ -128,12 +145,29 @@ def incrementAndCycle(step, current, minMax):
         return nextStep
 
 
+def incrementAndCycleTuples(step, current, aList, minMax):
+    currentIdx = 0
+    for key in aList:
+        if current == key[0]:
+            break
+        currentIdx = currentIdx + 1
+    nextStep = currentIdx + step
+    if nextStep < minMax[0]:
+        val = minMax[1] + nextStep
+        return aList[val][0]
+    if nextStep >= minMax[1]:
+        val = nextStep - minMax[1]
+        return aList[val][0]
+    else:
+        return aList[nextStep][0]
+
+
 def save_to_app(app, property, value):
     app[property] = value
     return app[property]
 
 
 def howManyPhotos(storageGB, resoltuion):
-    storageMB = storageGB  * 1024
+    storageMB = storageGB * 1024
     imageMB = product(resoltuion) * 8 / 1024 / 1024 / 8
     return storageMB / imageMB

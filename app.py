@@ -13,33 +13,28 @@ import pygame
 import time
 from os import path, mkdir
 from functions import *
-from constants import *
-if not pcDevMode:
-    import picamera
+from constants import App, camera, devMode
 
 clock = None
-screen  = None
+screen = None
 font = None
 textColor = None
 textBackground = None
 highlightedTextColor = None
 highlighted = None
 padding = None
-layer =  None
+layer = None
 firstLoop = None
 o = None
-startCamera =  None
-stopCamera =  None
-closeCamera =  None
-SCREEN_WIDTH = None
-SCREEN_HEIGHT = None
-camera = None
+startCamera = None
+stopCamera = None
+closeCamera = None
 
 
 def init():
     # check if path exists
-    if not path.exists(App[IMAGE_DIRECTORY]):
-        mkdir(App[IMAGE_DIRECTORY])
+    if not path.exists(App['imageDirectory']['value']):
+        mkdir(App['imageDirectory']['value'])
 
     # Import pygame.locals for easier access to key coordinates
     # Updated to conform to flake8 and black standards
@@ -49,145 +44,158 @@ def init():
     global clock
     clock = pygame.time.Clock()
 
-    # Define constants for the screen width and height
-    global SCREEN_WIDTH
-    SCREEN_WIDTH = App[DEFAULT_WINDOW_SIZE][2]
-    global SCREEN_HEIGHT
-    SCREEN_HEIGHT = App[DEFAULT_WINDOW_SIZE][3]
-
     # Create the screen object
     # The size is determined by the constant SCREEN_WIDTH and SCREEN_HEIGHT
     global screen
-    screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
+    screen = pygame.display.set_mode(
+        (App['fullscreen']['value'][0], App['fullscreen']['value'][1]))
 
     # create a font object.
     # 1st parameter is the font file
     # which is present in pygame.
     # 2nd parameter is size of the font
     global font
-    font = pygame.font.Font('freesansbold.ttf', 24)
+    font = pygame.font.Font('freesansbold.ttf', App['font']['value'])
 
     # create a text suface object,
     # on which text is drawn on it.
     global textColor
-    textColor = (255, 255, 255)
     global textBackground
-    textBackground = (0, 0, 0, 125)
     global highlightedTextColor
-    highlightedTextColor = (0, 0, 0)
     global highlighted
-    highlighted = (255, 255, 255)
+    textColor = App['fontColor']['value'][0]
+    textBackground = App['fontColor']['value'][1]
+    highlightedTextColor = App['fontColor']['value'][2]
+    highlighted = App['fontColor']['value'][0]
+
     global padding
-    padding = 20
+    padding = App['padding']['value']
 
     # creates transparent surface to blit all other surfaces to
-    global layer 
-    layer = pygame.Surface((1280, 720), pygame.SRCALPHA)
+    global layer
+    layer = pygame.Surface(
+        (App['fullscreen']['value'][0], App['fullscreen']['value'][1]), pygame.SRCALPHA)
 
     # Variable to keep the main loop running
     global firstLoop
     firstLoop = True
 
-    # setting up camera
-    if not pcDevMode:
-        global camera
-        camera = picamera.PiCamera()
-        camera.shutter_speed = App[SHUTTER_SPEED]
-        camera.iso = App[ISO]
-
     # starting the camera preview
     global startCamera
-    startCamera = lambda: camera.start_preview(
-        fullscreen=False, window=App[DEFAULT_WINDOW_SIZE])
     global stopCamera
-    stopCamera = lambda: camera.stop_preview()
     global closeCamera
-    closeCamera = lambda: camera.close()
+    def startCamera(): return camera.start_preview(
+        fullscreen=App['isFullscreen']['value'], window=App['window']['value'])
 
-    if not pcDevMode:
+    def stopCamera(): return camera.stop_preview()
+    def closeCamera(): return camera.close()
+    if not devMode:
         startCamera()
+
 
 def main():
     # Main loop
-    while App[ALIVE]:
-        # get  current  menu key
-        menuKey = list(textList.keys())[App[MENU_HILITE]]
+    while App['alive']['value']:
+        # current menu
+        aList = App['menus'][App['mode']['value']][App['menu']['value']]
         # Look at every event in the queue
         for event in pygame.event.get():
             # Did the user hit a key?
             if event.type == KEYDOWN:
                 # Was it the Escape key? If so, stop the loop.
                 if event.key == K_ESCAPE:
-                    App[ALIVE] = False
+                    App['alive']['value'] = False
+
                 if event.key == K_RETURN:
-                    if not pcDevMode:
-                        camera.resolution = App[IMAGE_RESOLUTION]
-                        takePhoto(camera, App, IMAGE_FILE_PATH, IMAGE_COUNT)
+                    if not devMode:
+                        camera.resolution = App['imageResolution']['value']
+                        takePhoto(
+                            camera, App['imageFilePath'], App['imageIterator'])
                         camera.resolution = (
-                            App[DEFAULT_WINDOW_SIZE][2], App[DEFAULT_WINDOW_SIZE][3])
+                            App['fullscreen']['value'][0], App['fullscreen']['value'][1])
+
                 if event.key == K_UP:
-                    App[MENU_HILITE] = incrementAndCycle(
-                        -1, App[MENU_HILITE], (0, len(textList.keys())-1))
+                    App['menuHighlight']['value'] = incrementAndCycleTuples(
+                        -1, App['menuHighlight']['value'], aList, (0, len(aList)))
+
                 if event.key == K_DOWN:
-                    App[MENU_HILITE] = incrementAndCycle(
-                        1, App[MENU_HILITE], (0, len(textList.keys())))
+                    App['menuHighlight']['value'] = incrementAndCycleTuples(
+                        1, App['menuHighlight']['value'], aList, (0, len(aList)))
+
                 if event.key == K_LEFT:
-                    menuActions(camera, menuKey, 'left')
+                    try:
+                        if type(App[App['menuHighlight']['value']]['values']).__name__ == 'list':
+                            App[App['menuHighlight']['value']]['value'] = traverseList2(
+                                App[App['menuHighlight']['value']]['value'], 'next', App[App['menuHighlight']['value']]['values'])
+                        elif type(App[App['menuHighlight']['value']]['values']).__name__ == 'tuple':
+                            App[App['menuHighlight']['value']]['value'] = adjustByFactor2(
+                                -2, App[App['menuHighlight']['value']]['value'], App[App['menuHighlight']['value']]['values'])
+                    except:
+                        pass
                 if event.key == K_RIGHT:
-                    menuActions(camera, menuKey, 'right')
+                    try:
+                        if type(App[App['menuHighlight']['value']]['values']).__name__ == 'list':
+                            App[App['menuHighlight']['value']]['value'] = traverseList2(
+                                App[App['menuHighlight']['value']]['value'], 'previous', App[App['menuHighlight']['value']]['values'])
+                        elif type(App[App['menuHighlight']['value']]['values']).__name__ == 'tuple':
+                            App[App['menuHighlight']['value']]['value'] = adjustByFactor2(
+                                2, App[App['menuHighlight']['value']]['value'], App[App['menuHighlight']['value']]['values'])
+                    except:
+                        pass
             # Did the user click the window close button? If so, stop the loop.
             elif event.type == QUIT:
-                App[ALIVE] = False
+                App['alive']['value'] = False
 
         # makes the GUI repr white
-        # screen.fill((255, 255, 255))
         screen.fill((0, 0, 0))
         layer.fill((0, 0, 0, 0))
 
-        # blitting all text onto layer
-        for key in textList:
+        # drawing menu options
+        menuIdx = 0
+        for key in App['menus'][App['mode']['value']][App['menu']['value']]:
             background = textBackground
             currentTextColor = textColor
-            currentIndex = list(textList.keys()).index(key)
-            if currentIndex == App[MENU_HILITE]:
+
+            if App['menuHighlight']['value'] == '':
+                App['menuHighlight']['value'] = key[0]
+            if App['menuHighlight']['value'] == key[0]:
                 background = highlighted
                 currentTextColor = highlightedTextColor
-                nextItemHpos = 0
-            text = textGen(font, textList[key](), currentTextColor, background)
+
+            text = textGen(font, key[1]().upper(),
+                           currentTextColor, background)
             rect = textRectify(text)
-            nextItemHpos = rect.height*(currentIndex)
-            if currentIndex == 0:
-                nextItemHpos = 0
-            layer.blit(text, ((SCREEN_WIDTH - rect.width - padding, rect.height*(currentIndex) + padding),
-                            (rect.width, rect.height)))
+            layer.blit(text, ((App['fullscreen']['value'][0] - rect.width - App['padding']['value'], rect.height*(menuIdx) + App['padding']['value']),
+                              (rect.width, rect.height)))
+            menuIdx = menuIdx + 1
 
-        # draw metering area
-        meterWidth = SCREEN_WIDTH//100 * \
-            App[METERING_MODE_VALUES][App[METERING_MODE]]['value']
+            # draw metering area
+        meterWidth = App['fullscreen']['value'][0]//100 * \
+            App['meteringMode']['values'][App['meteringMode']['value']]['value']
         rect = pygame.draw.rect(
-            layer, (128, 128, 128), ((SCREEN_WIDTH//2-(meterWidth//2), SCREEN_HEIGHT//2-(meterWidth//2)), (meterWidth, meterWidth)), 3)
+            layer, (128, 128, 128), ((App['fullscreen']['value'][0]//2-(meterWidth//2), App['fullscreen']['value'][1]//2-(meterWidth//2)), (meterWidth, meterWidth)), 3)
 
-
-        if not pcDevMode:
+        if not devMode:
             pygamesScreenRaw = pygame.image.tostring(layer, 'RGBA')
             global firstLoop
             if firstLoop:
                 o = camera.add_overlay(pygamesScreenRaw, size=(
-                    1280, 720), fullscreen=False, window=App[DEFAULT_WINDOW_SIZE])
+                    1280, 720), fullscreen=False, window=App['window']['value'])
                 o.alpha = 255
                 o.layer = 3
                 firstLoop = not firstLoop
             else:
                 o.update(pygamesScreenRaw)
-        elif pcDevMode:
+        elif devMode:
             screen.blit(layer, (0, 0))
             pygame.display.flip()
 
         clock.tick(15)
 
-    if not pcDevMode:
+    if not devMode:
         stopCamera()
         closeCamera()
+
 
 if __name__ == "__main__":
     init()
