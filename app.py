@@ -48,7 +48,7 @@ def init():
     # The size is determined by the constant SCREEN_WIDTH and SCREEN_HEIGHT
     global screen
     screen = pygame.display.set_mode(
-        (App['fullscreen']['value'][0], App['fullscreen']['value'][1]))
+        (App['fullscreen']['value'][0], App['fullscreen']['value'][1]), pygame.FULLSCREEN)
 
     # create a font object.
     # 1st parameter is the font file
