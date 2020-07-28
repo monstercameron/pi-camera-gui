@@ -102,7 +102,7 @@ def main():
                     if not devMode:
                         camera['camera'].resolution = App['imageResolution']['value']
                         takePhoto(
-                            camera['camera'], App['imageFilePath'], App['imageIterator'])
+                            camera['camera'], App['imageFilePath'](), App['imageIterator'])
                         camera['camera'].resolution = (
                             App['fullscreen']['value'][0], App['fullscreen']['value'][1])
 
