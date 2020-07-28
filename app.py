@@ -81,16 +81,8 @@ def init():
     firstLoop = True
 
     # starting the camera preview
-    global startCamera
-    global stopCamera
-    global closeCamera
-    def startCamera(): return camera.start_preview(
-        fullscreen=App['isFullscreen']['value'], window=App['window']['value'])
-
-    def stopCamera(): return camera.stop_preview()
-    def closeCamera(): return camera.close()
     if not devMode:
-        startCamera()
+        camera['start']()
 
 
 def main():
@@ -115,32 +107,61 @@ def main():
                             App['fullscreen']['value'][0], App['fullscreen']['value'][1])
 
                 if event.key == K_UP:
-                    App['menuHighlight']['value'] = incrementAndCycleTuples(
-                        -1, App['menuHighlight']['value'], aList, (0, len(aList)))
+                    App['menuHighlight']['value'] = aList[incrementAndCycle(
+                        -1, aList.index(App['menuHighlight']['value']), (0, len(aList)))]
 
                 if event.key == K_DOWN:
-                    App['menuHighlight']['value'] = incrementAndCycleTuples(
-                        1, App['menuHighlight']['value'], aList, (0, len(aList)))
+                    App['menuHighlight']['value'] = aList[incrementAndCycle(
+                        1, aList.index(App['menuHighlight']['value']), (0, len(aList)))]
 
                 if event.key == K_LEFT:
                     try:
-                        if type(App[App['menuHighlight']['value']]['values']).__name__ == 'list':
+                        aType = type(
+                            App[App['menuHighlight']['value']]['values']).__name__
+                        menuValue = App[App['menuHighlight']['value']]['value']
+                        menuValues = App[App['menuHighlight']
+                                         ['value']]['values']
+                        if aType == 'list':
                             App[App['menuHighlight']['value']]['value'] = traverseList2(
-                                App[App['menuHighlight']['value']]['value'], 'next', App[App['menuHighlight']['value']]['values'])
-                        elif type(App[App['menuHighlight']['value']]['values']).__name__ == 'tuple':
+                                menuValue, 'next', menuValues)
+                        elif aType == 'tuple':
                             App[App['menuHighlight']['value']]['value'] = adjustByFactor2(
-                                -2, App[App['menuHighlight']['value']]['value'], App[App['menuHighlight']['value']]['values'])
+                                2, menuValue, menuValues)
+                        elif aType == 'dict':
+                            App[App['menuHighlight']['value']]['value'] = traverseList2(
+                                menuValue, 'next', list(menuValues.keys()))
+                        elif aType == 'function':
+                            App[App['menuHighlight']['value']]['value'] = traverseList2(
+                                menuValue, 'previous', menuValues())
+                    except ValueError:
+                        App[App['menuHighlight']['value']]['value'] = menuValues()[
+                            0]
                     except:
                         pass
                 if event.key == K_RIGHT:
                     try:
-                        if type(App[App['menuHighlight']['value']]['values']).__name__ == 'list':
+                        aType = type(
+                            App[App['menuHighlight']['value']]['values']).__name__
+                        menuValue = App[App['menuHighlight']['value']]['value']
+                        menuValues = App[App['menuHighlight']
+                                         ['value']]['values']
+                        if aType == 'list':
                             App[App['menuHighlight']['value']]['value'] = traverseList2(
-                                App[App['menuHighlight']['value']]['value'], 'previous', App[App['menuHighlight']['value']]['values'])
-                        elif type(App[App['menuHighlight']['value']]['values']).__name__ == 'tuple':
+                                menuValue, 'previous', menuValues)
+                        elif aType == 'tuple':
                             App[App['menuHighlight']['value']]['value'] = adjustByFactor2(
-                                2, App[App['menuHighlight']['value']]['value'], App[App['menuHighlight']['value']]['values'])
+                                2, menuValue, menuValues)
+                        elif aType == 'dict':
+                            App[App['menuHighlight']['value']]['value'] = traverseList2(
+                                menuValue, 'previous', list(menuValues.keys()))
+                        elif aType == 'function':
+                            App[App['menuHighlight']['value']]['value'] = traverseList2(
+                                menuValue, 'previous', menuValues())
+                    except ValueError:
+                        App[App['menuHighlight']['value']]['value'] = menuValues()[
+                            0]
                     except:
+                        print(menuValue)
                         pass
             # Did the user click the window close button? If so, stop the loop.
             elif event.type == QUIT:
@@ -157,12 +178,21 @@ def main():
             currentTextColor = textColor
 
             if App['menuHighlight']['value'] == '':
-                App['menuHighlight']['value'] = key[0]
-            if App['menuHighlight']['value'] == key[0]:
-                background = highlighted
-                currentTextColor = highlightedTextColor
+                App['menuHighlight']['value'] = key
 
-            text = textGen(font, key[1]().upper(),
+            if App['menuHighlight']['value'] == key:
+                currentTextColor = highlightedTextColor
+                background = highlighted
+
+            message = ''
+            if 'message' in App[key]:
+                message = App[key]['message']()
+            elif 'value' in App[key]:
+                message = f"{key} {App[key]['value']}"
+            else:
+                message = key
+
+            text = textGen(font, message.upper(),
                            currentTextColor, background)
             rect = textRectify(text)
             layer.blit(text, ((App['fullscreen']['value'][0] - rect.width - App['padding']['value'], rect.height*(menuIdx) + App['padding']['value']),
@@ -179,7 +209,7 @@ def main():
             pygamesScreenRaw = pygame.image.tostring(layer, 'RGBA')
             global firstLoop
             if firstLoop:
-                o = camera.add_overlay(pygamesScreenRaw, size=(
+                o = camera['camera'].add_overlay(pygamesScreenRaw, size=(
                     1280, 720), fullscreen=False, window=App['window']['value'])
                 o.alpha = 255
                 o.layer = 3
@@ -193,8 +223,8 @@ def main():
         clock.tick(15)
 
     if not devMode:
-        stopCamera()
-        closeCamera()
+        camera['stop']()
+        camera['close']()
 
 
 if __name__ == "__main__":
