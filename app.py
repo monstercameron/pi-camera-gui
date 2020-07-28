@@ -123,13 +123,13 @@ def main():
                                          ['value']]['values']
                         if aType == 'list':
                             App[App['menuHighlight']['value']]['value'] = traverseList2(
-                                menuValue, 'next', menuValues)
+                                menuValue, 'previous', menuValues)
                         elif aType == 'tuple':
                             App[App['menuHighlight']['value']]['value'] = adjustByFactor2(
                                 2, menuValue, menuValues)
                         elif aType == 'dict':
                             App[App['menuHighlight']['value']]['value'] = traverseList2(
-                                menuValue, 'next', list(menuValues.keys()))
+                                menuValue, 'previous', list(menuValues.keys()))
                         elif aType == 'function':
                             App[App['menuHighlight']['value']]['value'] = traverseList2(
                                 menuValue, 'previous', menuValues())
@@ -147,16 +147,16 @@ def main():
                                          ['value']]['values']
                         if aType == 'list':
                             App[App['menuHighlight']['value']]['value'] = traverseList2(
-                                menuValue, 'previous', menuValues)
+                                menuValue, 'next', menuValues)
                         elif aType == 'tuple':
                             App[App['menuHighlight']['value']]['value'] = adjustByFactor2(
                                 2, menuValue, menuValues)
                         elif aType == 'dict':
                             App[App['menuHighlight']['value']]['value'] = traverseList2(
-                                menuValue, 'previous', list(menuValues.keys()))
+                                menuValue, 'next', list(menuValues.keys()))
                         elif aType == 'function':
                             App[App['menuHighlight']['value']]['value'] = traverseList2(
-                                menuValue, 'previous', menuValues())
+                                menuValue, 'next', menuValues())
                     except ValueError:
                         App[App['menuHighlight']['value']]['value'] = menuValues()[
                             0]
