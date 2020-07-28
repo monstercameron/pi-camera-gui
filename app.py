@@ -100,10 +100,10 @@ def main():
 
                 if event.key == K_RETURN:
                     if not devMode:
-                        camera.resolution = App['imageResolution']['value']
+                        camera['camera'].resolution = App['imageResolution']['value']
                         takePhoto(
-                            camera, App['imageFilePath'], App['imageIterator'])
-                        camera.resolution = (
+                            camera['camera'], App['imageFilePath'], App['imageIterator'])
+                        camera['camera'].resolution = (
                             App['fullscreen']['value'][0], App['fullscreen']['value'][1])
 
                 if event.key == K_UP:
