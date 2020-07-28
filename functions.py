@@ -29,9 +29,9 @@ def takePhoto(camera, filePath, interator):
 
 
 def incrementPhotoIfExists(filePath, interator):
-    while path.exists(filePath['value']()):
+    while path.exists(filePath):
         interator['value'] = interator['value'] + 1
-    return filePath['value']()
+    return filePath
 
 
 def adjustByIncrement(app, increment, property, min_max):
