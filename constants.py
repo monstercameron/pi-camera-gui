@@ -81,7 +81,7 @@ if not devMode:
     import picamera
     camera['camera'] = picamera.PiCamera()
     camera['camera'].shutter_speed = App['shutterSpeed']['value']
-    camera['camera'].iso = App['ISO']['value']
+    camera['camera'].iso = App['iso']['value']
     camera['start'] = lambda: camera['camera'].start_preview(
         fullscreen=App['isFullscreen']['value'], window=App['window']['value'])
     camera['stop'] = lambda: camera['camera'].stop_preview()
