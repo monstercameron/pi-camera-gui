@@ -84,16 +84,17 @@ def adjustByFactor(app, factor, property, min_max):
         print('Error')
 
 
-def adjustByFactor2(factor, value, range):
-    if factor > 0:
-        updated_value = value * factor
-        if updated_value > range[1]:
+def adjustByFactor2(multiply, value, range):
+    # print(multiply, value, range)
+    if multiply > 0:
+        updated_value = value * multiply
+        if updated_value >= range[1]:
             return range[1]
         else:
             return updated_value
-    elif factor < 0:
-        updated_value = value // abs(factor)
-        if updated_value < range[0]:
+    elif multiply < 0:
+        updated_value = value // abs(multiply)
+        if updated_value <= range[0]:
             return range[0]
         else:
             return updated_value
@@ -102,20 +103,20 @@ def adjustByFactor2(factor, value, range):
 
 
 def traverseList2(current, direction, list):
-        if direction == 'next':
-            index = list.index(current)
-            if index + 1 > len(list) - 1:
-                index = 0
-                return list[index]
-            else:
-                return list[index+1]
-        elif direction == 'previous':
-            index = list.index(current)
-            if index - 1 < 0:
-                index = len(list)-1
-                return list[index]
-            else:
-                return list[index-1]
+    if direction == 'next':
+        index = list.index(current)
+        if index + 1 > len(list) - 1:
+            index = 0
+            return list[index]
+        else:
+            return list[index+1]
+    elif direction == 'previous':
+        index = list.index(current)
+        if index - 1 < 0:
+            index = len(list)-1
+            return list[index]
+        else:
+            return list[index-1]
 
 
 def traverseList2(current, direction, list):
@@ -140,7 +141,7 @@ def incrementAndCycle(step, current, minMax):
     if current + step >= minMax[1]:
         return nextStep - minMax[1]
     elif current + step < minMax[0]:
-        return minMax[1] - nextStep -2
+        return minMax[1] - nextStep - 2
     else:
         return nextStep
 

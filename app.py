@@ -126,7 +126,7 @@ def main():
                                 menuValue, 'previous', menuValues)
                         elif aType == 'tuple':
                             App[App['menuHighlight']['value']]['value'] = adjustByFactor2(
-                                2, menuValue, menuValues)
+                                -2, menuValue, menuValues)
                         elif aType == 'dict':
                             App[App['menuHighlight']['value']]['value'] = traverseList2(
                                 menuValue, 'previous', list(menuValues.keys()))
