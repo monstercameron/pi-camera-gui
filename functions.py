@@ -172,25 +172,3 @@ def howManyPhotos(storageGB, resoltuion):
     storageMB = storageGB * 1024
     imageMB = product(resoltuion) * 8 / 1024 / 1024 / 8
     return storageMB / imageMB
-
-# not a pure function :(
-def applyChanges(changes, target):
-    listOfChanges = changes.keys()
-    for change in listOfChanges:
-        print("current change: "+change)
-        print(changes['iso']['value'])
-        print(target['self'].iso)
-        if change in target:
-            if callable(target[change]):
-                target[change](changes[change]['value'])
-    return None
-
-def updateProperty(prop, value):
-    print('prop')
-    print(prop)
-    print('value')
-    print(value)
-    prop = value
-    print('updated prop')
-    print(prop)
-    return prop

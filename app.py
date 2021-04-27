@@ -13,7 +13,7 @@ import pygame
 import time
 from os import path, mkdir
 from functions import *
-from constants import App, camera, devMode
+from constants import App, camera, devMode, applyChanges
 
 clock = None
 screen = None

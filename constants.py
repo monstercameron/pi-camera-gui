@@ -105,7 +105,7 @@ App['fullscreen'] = {'value': (1280, 720)}
 App['diskSize'] = {'value': shutil.disk_usage("/")[2] // (2**30)}
 App['diskSpace'] = {'value': shutil.disk_usage("/")[2] // (2**30)}
 App['mode'] = {'value': 'photo', 'values': ['photo', 'video']}
-App['menu'] = {'value': 'auto', 'values': ['auto', 'manual', 'settings']}
+App['menu'] = {'value': 'manual', 'values': ['auto', 'manual', 'settings']}
 App['menuHighlight'] = {'value': ''}
 App['stats'] = {'values': [
     ''], 'message': lambda: f"{int(howManyPhotos(App['diskSize']['value'], App['imageResolution']['value']))} Photos {App['diskSize']['value']}GB {int(product(App['imageResolution']['value'])/1000000)}MP {App['imageFormat']['value']} {App['imageQuality']['value']}"}
@@ -133,14 +133,17 @@ if not devMode:
         fullscreen=App['isFullscreen']['value'], window=App['window']['value'])
     camera['stop'] = lambda: camera['camera'].stop_preview()
     camera['close'] = lambda: camera['camera'].close()
-    App['camera'] = {"self": camera['camera'],
-                     "iso": lambda iso: updateProperty(camera['camera'].iso, iso),
-                     "wb": camera['camera'].awb_mode,
-                     "dynamicRangeCompression": camera['camera'].drc_strength,
-                     "exposureMode": camera['camera'].exposure_mode,
-                     "exposureCompensation": camera['camera'].exposure_compensation,
-                     "shutterSpeed": camera['camera'].shutter_speed,
-                     "imageDenoise": camera['camera'].image_denoise,
-                     "meteringMode": camera['camera'].meter_mode,
-                     "imageResolution": camera['camera'].resolution,
-                     }
+    App['camera'] = camera['camera']
+
+# pycamera object properties are no subscritable so I can't programatically update the props, must hard code it
+
+def applyChanges(props, camera):
+    listOfProps = props.keys()
+    for prop in listOfProps:
+        if prop == 'iso':
+            if camera.iso != props[prop]['value']:
+                camera.iso = props[prop]['value']
+        if prop == 'shutterSpeed':
+            if camera.shutter_speed != props[prop]['value']:
+                camera.shutter_speed = props[prop]['value']
+    return None
