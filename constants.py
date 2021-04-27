@@ -122,7 +122,7 @@ App['menus']['photo']['settings'] = ['stats', 'mode', 'menu',
 
 DEFAULT = copy.deepcopy(App)
 
-devMode = True
+devMode = False
 camera = {}
 if not devMode:
     import picamera
@@ -138,7 +138,7 @@ if not devMode:
                      "dynamicRangeCompression": camera['camera'].drc_strength,
                      "exposureMode": camera['camera'].exposure_mode,
                      "exposureCompensation": camera['camera'].exposure_compensation,
-                     "shutterSpeed": camera['camera'].shutter_mode,
+                     "shutterSpeed": camera['camera'].shutter_speed,
                      "imageDenoise": camera['camera'].image_denoise,
                      "meteringMode": camera['camera'].meter_mode,
                      "imageResolution": camera['camera'].resolution,
