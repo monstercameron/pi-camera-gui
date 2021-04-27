@@ -66,8 +66,8 @@ App['contrast'] = {'value': 0,
                    'message': lambda: f"{App['contrast']['value']} image contrast"}
 
 App['brightness'] = {'value': 0,
-                   'values': (-100, 100),
-                   'message': lambda: f"{App['brightness']['value']} image brightness"}
+                     'values': (-100, 100),
+                     'message': lambda: f"{App['brightness']['value']} image brightness"}
 
 App['wb'] = {'value': 'auto',
              'values': ['off', 'auto', 'sunlight', 'cloudy', 'shade', 'tungsten', 'fluorescent', 'incandescent', 'flash', 'horizon'],
@@ -81,7 +81,7 @@ App['shutterSpeed'] = {'value': 8000,
                        'values': (100, 32000),
                        'message': lambda: f"{App['shutterSpeed']['value']} shutter speed"}
 
-App['iso'] = {'value': 800,
+App['iso'] = {'value': 400,
               'values': (1, 1600),
               'message': lambda: f"{App['iso']['value']} iso"}
 
@@ -110,7 +110,7 @@ App['menuHighlight'] = {'value': ''}
 App['stats'] = {'values': [
     ''], 'message': lambda: f"{int(howManyPhotos(App['diskSize']['value'], App['imageResolution']['value']))} Photos {App['diskSize']['value']}GB {int(product(App['imageResolution']['value'])/1000000)}MP {App['imageFormat']['value']} {App['imageQuality']['value']}"}
 # Menus
-App['menus'] = {'photo': {'auto': [], 'manual': [], 'settings': []},
+App['menus'] = {'photo': {'manual': [], 'auto': [], 'settings': []},
                 'video': {'auto': [], 'manual': [], 'settings': []}}
 
 
@@ -133,7 +133,8 @@ if not devMode:
         fullscreen=App['isFullscreen']['value'], window=App['window']['value'])
     camera['stop'] = lambda: camera['camera'].stop_preview()
     camera['close'] = lambda: camera['camera'].close()
-    App['camera'] = {"iso": camera['camera'].iso,
+    App['camera'] = {"self": camera['camera'],
+                     "iso": lambda iso: updateProperty(camera['camera'].iso, iso),
                      "wb": camera['camera'].awb_mode,
                      "dynamicRangeCompression": camera['camera'].drc_strength,
                      "exposureMode": camera['camera'].exposure_mode,

@@ -138,6 +138,8 @@ def main():
                             0]
                     except:
                         pass
+                    finally:
+                        applyChanges(App, App['camera'])
                 if event.key == K_RIGHT:
                     try:
                         aType = type(
@@ -161,8 +163,10 @@ def main():
                         App[App['menuHighlight']['value']]['value'] = menuValues()[
                             0]
                     except:
-                        print(menuValue)
+                        #print(menuValue)
                         pass
+                    finally:
+                        applyChanges(App, App['camera'])
             # Did the user click the window close button? If so, stop the loop.
             elif event.type == QUIT:
                 App['alive']['value'] = False
@@ -220,7 +224,7 @@ def main():
             screen.blit(layer, (0, 0))
             pygame.display.flip()
 
-        clock.tick(15)
+        clock.tick(5)
 
     if not devMode:
         camera['stop']()
