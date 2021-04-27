@@ -139,7 +139,7 @@ def main():
                     except:
                         pass
                     finally:
-                        applyChanges(App, App['camera'])
+                        applyChanges(App, camera['camera'])
                 if event.key == K_RIGHT:
                     try:
                         aType = type(
@@ -163,10 +163,10 @@ def main():
                         App[App['menuHighlight']['value']]['value'] = menuValues()[
                             0]
                     except:
-                        #print(menuValue)
+                        # print(menuValue)
                         pass
                     finally:
-                        applyChanges(App, App['camera'])
+                        applyChanges(App, camera['camera'])
             # Did the user click the window close button? If so, stop the loop.
             elif event.type == QUIT:
                 App['alive']['value'] = False

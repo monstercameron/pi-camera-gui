@@ -133,7 +133,6 @@ if not devMode:
         fullscreen=App['isFullscreen']['value'], window=App['window']['value'])
     camera['stop'] = lambda: camera['camera'].stop_preview()
     camera['close'] = lambda: camera['camera'].close()
-    App['camera'] = camera['camera']
 
 # pycamera object properties are no subscritable so I can't programatically update the props, must hard code it
 
