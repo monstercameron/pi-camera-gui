@@ -39,7 +39,7 @@ App['imageEffect'] = {'value': 'none',
                       'values': ['none', 'negative', 'solarize', 'sketch', 'denoise', 'emboss', 'oilpaint', 'hatch', 'gpen', 'pastel',
                                  'watercolor', 'film', 'blur', 'saturation', 'colorswap', 'washedout', 'posterise', 'colorpoint',
                                  'colorbalance', 'cartoon', 'deinterlace1', 'deinterlace2'],
-                      'message': lambda: f"{App['imageFormat']['value']} image format"}
+                      'message': lambda: f"{App['imageEffect']['value']} image effect"}
 
 App['imageAspectRatio'] = {'value': 'full censor',
                            'values': {'16:9': [(1280, 720), (1920, 1080), (2560, 1440), (3840, 2160)], '4:3': [(1280, 960), (2048, 1536), (4000, 3000)], '5:4': [
@@ -105,16 +105,16 @@ App['fullscreen'] = {'value': (1280, 720)}
 App['diskSize'] = {'value': shutil.disk_usage("/")[2] // (2**30)}
 App['diskSpace'] = {'value': shutil.disk_usage("/")[2] // (2**30)}
 App['mode'] = {'value': 'photo', 'values': ['photo', 'video']}
-App['menu'] = {'value': 'manual', 'values': ['auto', 'manual', 'settings']}
+App['menu'] = {'value': 'manual', 'values': ['auto', 'manual', 'settings', 'effects']}
 App['menuHighlight'] = {'value': ''}
 App['stats'] = {'values': [
     ''], 'message': lambda: f"{int(howManyPhotos(App['diskSize']['value'], App['imageResolution']['value']))} Photos {App['diskSize']['value']}GB {int(product(App['imageResolution']['value'])/1000000)}MP {App['imageFormat']['value']} {App['imageQuality']['value']}"}
-# Menus
-App['menus'] = {'photo': {'manual': [], 'auto': [], 'settings': []},
+# Stills/ Video sub menus
+App['menus'] = {'photo': { 'effects': [], 'manual': [], 'auto': [],'settings': []},
                 'video': {'auto': [], 'manual': [], 'settings': []}}
 
-
-App['menus']['photo']['auto'] = ['stats', 'mode', 'menu']
+App['menus']['photo']['auto'] = ['stats', 'mode', 'menu', 'exposureMode']
+App['menus']['photo']['effects'] = ['stats', 'mode', 'menu', 'imageEffect']
 App['menus']['photo']['manual'] = ['stats', 'mode',
                                    'menu', 'iso', 'wb', 'meteringMode', 'shutterSpeed']
 App['menus']['photo']['settings'] = ['stats', 'mode', 'menu',
@@ -127,15 +127,22 @@ camera = {}
 if not devMode:
     import picamera
     camera['camera'] = picamera.PiCamera()
-    camera['camera'].shutter_speed = App['shutterSpeed']['value']
-    camera['camera'].iso = App['iso']['value']
+    camera['camera'].exposure_mode = App['exposureMode']['value']
     camera['start'] = lambda: camera['camera'].start_preview(
         fullscreen=App['isFullscreen']['value'], window=App['window']['value'])
     camera['stop'] = lambda: camera['camera'].stop_preview()
     camera['close'] = lambda: camera['camera'].close()
 
-# pycamera object properties are no subscritable so I can't programatically update the props, must hard code it
 
+## Set values on menu change
+def setValuesOnMenuChange(app, camera):
+    if app['menu']['value'] == 'auto':
+        camera['camera'].exposure_mode = app['menu']['values'][1]
+        # 'auto', 'manual', 'settings', 'effects']
+    return None
+
+## pycamera object properties are not subscritable so I can't
+## programatically update the props, must hard code it
 def applyChanges(props, camera):
     listOfProps = props.keys()
     for prop in listOfProps:
@@ -145,4 +152,17 @@ def applyChanges(props, camera):
         if prop == 'shutterSpeed':
             if camera.shutter_speed != props[prop]['value']:
                 camera.shutter_speed = props[prop]['value']
+        if prop == 'wb':
+            if camera.awb_mode != props[prop]['value']:
+                camera.awb_mode = props[prop]['value']
+        if prop == 'meteringMode':
+            if camera.meter_mode != props[prop]['value']:
+                camera.meter_mode = props[prop]['value']
+        if prop == 'imageEffect':
+            if camera.image_effect != props[prop]['value']:
+                camera.image_effect = props[prop]['value']
+        if prop == 'exposureMode':
+            if camera.exposure_mode != props[prop]['value']:
+                camera.exposure_mode = props[prop]['value']
+
     return None
