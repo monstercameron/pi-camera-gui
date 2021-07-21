@@ -1,9 +1,10 @@
 import pygame
 
-def main():
+def Gui(settings):
     pygame.init()
-    screen = pygame.display.set_mode((400, 400))
-    pygame.display.set_caption("Pygame Test")
+    screen = pygame.display.set_mode((settings["display"]["height"], settings["display"]["width"]))
+
+    pygame.display.set_caption(settings["display"]["caption"])
     clock = pygame.time.Clock()
     done = False
     while not done:
