@@ -1,18 +1,18 @@
 import json
-settings_file = 'settings/camera.settings'
+settings = 'settings/camera.settings'
+menus = 'settings/menu.settings'
 
-
-def saveSettings(settings):
+def saveSettings(file, dict):
     try:
-        with open(settings_file, 'w') as f:
-            f.write(json.dumps(settings))
+        with open(file, 'w') as f:
+            f.write(json.dumps(dict))
     except Exception as e:
         print(e)
 
-def openSettings():
+def openSettings(file):
     try:
         
-        with open(settings_file, 'r') as f:
+        with open(file, 'r') as f:
             return json.loads(f.read()) 
     except:
         saveSettings({})

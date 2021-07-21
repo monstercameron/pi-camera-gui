@@ -1,0 +1,52 @@
+{
+  "menus": [
+    {
+      "name": "auto",
+      "options": [
+        {
+          "name": "test list",
+          "type": "list",
+          "options": [
+            "low",
+            "medium",
+            "high",
+            "ultra"
+          ]
+        },
+        {
+          "name": "test range",
+          "type": "range",
+          "options": {
+            "min": 1,
+            "max": 100,
+            "step": 1
+          }
+        }
+      ]
+    },
+    {
+      "name": "test 2",
+      "options": [
+        {
+          "name": "test list",
+          "type": "list",
+          "options": [
+            "low",
+            "medium",
+            "high",
+            "ultra"
+          ]
+        },
+        {
+          "name": "test range",
+          "type": "range",
+          "options": {
+            "min": 1,
+            "max": 100,
+            "step": 1
+          }
+        }
+      ]
+    }
+  ]
+}

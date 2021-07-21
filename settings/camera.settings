@@ -2,6 +2,9 @@
   "display": {
     "height": 500,
     "width": 500,
-    "caption": "Picamera GUI"
+    "caption": "Picamera GUI",
+    "refreshrate": 60,
+    "fontsize": 24,
+    "padding": 10
   }
 }
