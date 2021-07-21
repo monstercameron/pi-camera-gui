@@ -17,17 +17,18 @@ def Gui(controls, menus, settings):
 
     clock = pygame.time.Clock()
 
-    menuPositions = []
+    menuPositions = [0, 0, 0, 0]  # menu, submenu, option, level
 
     done = False
     while not done:
+        if settings["display"]["showmenu"]:
+            menu(pygame, layer, font, menuPositions, menus, settings)
         for event in pygame.event.get():
-            controls(pygame, event, menuPositions, settings)
+            controls(pygame, event, menuPositions, menus)
             if event.type == pygame.QUIT:
                 done = True
 
-        menu(pygame, layer, font, menus, settings)
-
+        # print(menuPositions)
         screen.blit(layer, (0, 0))
         pygame.display.flip()
         clock.tick(settings["display"]["refreshrate"])
@@ -45,14 +46,17 @@ def textToRect(text):
     return textRect
 
 
-def menu(pygame, surface, font, menus, settings):
+def menu(pygame, surface, font, menuPos, menus, settings):
+    surface.fill((255, 255, 255, 255))
     highlighted = (255, 255, 255)
     normal = (0, 0, 0)
+
     for count, menu in enumerate(menus["menus"]):
+        superCount = count
 
         foreground = normal
         background = highlighted
-        if count == 1:
+        if count == menuPos[0]:
             foreground = highlighted
             background = normal
 
@@ -62,3 +66,40 @@ def menu(pygame, surface, font, menus, settings):
 
         # saving menu bitmap to layer
         surface.blit(text, (padding, padding+textRect.height*count))
+
+        # drawing sub menu bitmap to screen
+        if "options" in menu and superCount == menuPos[0]:
+            for count, option in enumerate(menu["options"]):
+                foreground = normal
+                background = highlighted
+                if count == menuPos[1]:
+                    foreground = highlighted
+                    background = normal
+
+                text = textGenerator(
+                    font, option["name"], foreground, background)
+                textRect = textToRect(text)
+                surface.blit(text,
+                             (100, padding+textRect.height*count))
+
+                # drawing sub menu options bitmap to screen
+                if "options" in option and count == menuPos[1]:
+                    foreground = highlighted
+                    background = normal
+                    text = textGenerator(
+                        font, "loading...", foreground, background)
+                    # print(option["type"])
+
+                    # check option type
+                    if option["type"] == "list":
+                        text = textGenerator(
+                            font, option["options"][menuPos[2]], foreground, background)
+                    elif option["type"] == "range":
+                        text = textGenerator(
+                            font, str(option["options"]["value"]), foreground, background)
+
+                    textRect = textToRect(text)
+                    surface.blit(text,
+                                 (250, textRect.height))
+                # break
+        # break

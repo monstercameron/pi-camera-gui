@@ -19,7 +19,8 @@
           "options": {
             "min": 1,
             "max": 100,
-            "step": 1
+            "step": 1,
+            "value": 50
           }
         }
       ]
@@ -28,22 +29,23 @@
       "name": "test 2",
       "options": [
         {
-          "name": "test list",
+          "name": "test list 2",
           "type": "list",
           "options": [
-            "low",
+            "low 2",
             "medium",
             "high",
             "ultra"
           ]
         },
         {
-          "name": "test range",
+          "name": "test range 2",
           "type": "range",
           "options": {
-            "min": 1,
+            "min": 5,
             "max": 100,
-            "step": 1
+            "step": 1,
+            "value": 50
           }
         }
       ]
