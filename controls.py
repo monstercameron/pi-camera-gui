@@ -23,6 +23,7 @@ def cameraControls(pygame, event, menuPos, menus):
         elif event.key == pygame.K_LEFT:
             # print("left")
             if menuPos[3] >= 1:
+                menuPos[menuPos[3]] = 0
                 menuPos[3] = menuPos[3] - 1
 
 

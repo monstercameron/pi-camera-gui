@@ -68,11 +68,11 @@ def menu(pygame, surface, font, menuPos, menus, settings):
         surface.blit(text, (padding, padding+textRect.height*count))
 
         # drawing sub menu bitmap to screen
-        if "options" in menu and superCount == menuPos[0]:
+        if "options" in menu and superCount == menuPos[0] and menuPos[3] > 0:
             for count, option in enumerate(menu["options"]):
                 foreground = normal
                 background = highlighted
-                if count == menuPos[1]:
+                if count == menuPos[1] and menuPos[3] > 0:
                     foreground = highlighted
                     background = normal
 
@@ -83,7 +83,7 @@ def menu(pygame, surface, font, menuPos, menus, settings):
                              (100, padding+textRect.height*count))
 
                 # drawing sub menu options bitmap to screen
-                if "options" in option and count == menuPos[1]:
+                if "options" in option and count == menuPos[1] and menuPos[3] > 1:
                     foreground = highlighted
                     background = normal
                     text = textGenerator(
