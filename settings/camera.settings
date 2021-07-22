@@ -7,5 +7,9 @@
     "fontsize": 24,
     "padding": 10,
     "showmenu": true
+  },
+  "files":{
+      "path":"/images",
+      "extension":"jpg"
   }
 }
