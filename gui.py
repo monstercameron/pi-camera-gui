@@ -36,7 +36,7 @@ def Gui(controls, menus, settings):
 
 
 def textGenerator(font, text, foreground, background,):
-    text = font.render(text, False, foreground, background)
+    text = font.render(text.upper(), False, foreground, background)
     return text
 
 
@@ -62,6 +62,7 @@ def menu(pygame, surface, font, menuPos, menus, settings):
 
         text = textGenerator(font, menu["name"], foreground, background)
         textRect = textToRect(text)
+        superTextRect = textRect
         padding = settings["display"]["padding"]
 
         # saving menu bitmap to layer
@@ -79,6 +80,7 @@ def menu(pygame, surface, font, menuPos, menus, settings):
                 text = textGenerator(
                     font, option["name"], foreground, background)
                 textRect = textToRect(text)
+                subTextRect = textRect
                 surface.blit(text,
                              (100, padding+textRect.height*count))
 
@@ -100,6 +102,6 @@ def menu(pygame, surface, font, menuPos, menus, settings):
 
                     textRect = textToRect(text)
                     surface.blit(text,
-                                 (250, textRect.height))
+                                 (100 + padding + subTextRect.width, padding+subTextRect.height*count))
                 # break
         # break

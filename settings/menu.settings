@@ -4,7 +4,7 @@
       "name": "auto",
       "options": [
         {
-          "name": "test list",
+          "name": "Quality",
           "type": "list",
           "options": [
             "low",
