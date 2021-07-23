@@ -8,12 +8,13 @@ class Camera:
         self.camera = picamera.PiCamera()
         self.menus = menus
         self.settings = settings
-        self.setCameraDefaults()
+        self.resolution = (4000, 3000)
+        self.autoMode()
 
-    def setCameraDefaults(self):
-        self.exposure('off')
-        self.iso(800)
-        # self.shutterSpeed()
+    def autoMode(self):
+        self.camera.exposure_mode = 'auto'
+        self.camera.shutter_speed = 0
+        self.camera.iso = 0
 
     def getCamera(self):
         return self.camera
@@ -51,8 +52,49 @@ class Camera:
             self.camera.awb_mode = value
         return self.camera.awb_mode
 
+    def sharpness(self, value=None):
+        if value is not None:
+            self.camera.sharpness = value
+        return self.camera.sharpness
+
+    def imgDenoise(self, value=None):
+        if value is not None:
+            self.camera.image_denoise = value
+        return self.camera.image_denoise
+
+    def imgEffect(self, value=None):
+        if value is not None:
+            self.camera.image_effect = value
+        return self.camera.image_effect
+
+    def drcStrength(self, value=None):
+        if value is not None:
+            self.camera.drc_strength = value
+        return self.camera.drc_strength
+
+    def contrast(self, value=None):
+        if value is not None:
+            self.camera.contrast = value
+        return self.camera.contrast
+
+    def saturation(self, value=None):
+        if value is not None:
+            self.camera.saturation = value
+        return self.camera.saturation
+
+    def brightness(self, value=None):
+        if value is not None:
+            self.camera.brightness = value
+        return self.camera.brightness
+
+    def resolutionGetSet(self, value=None):
+        if value is not None:
+            strToTuple = tuple(map(int, value.split(',')))
+            self.resolution = strToTuple
+        return self.resolution
+
     def captureImage(self):
-        self.camera.resolution = (4000, 3000)
+        self.camera.resolution = self.resolution
 
         try:
             dateAndTime = datetime.now().strftime('%Y-%m-%d')
@@ -86,5 +128,13 @@ class Camera:
             "exposure": self.exposure,
             "shutter": self.shutterSpeed,
             "iso": self.iso,
-            "awb": self.whiteBalance
+            "awb": self.whiteBalance,
+            "sharpness":self.sharpness,
+            "imagedenoise":self.imgDenoise,
+            "imageeffect":self.imgEffect,
+            "dynamicrangecompression":self.drcStrength,
+            "contrast":self.contrast,
+            "saturation":self.saturation,
+            "brightness":self.brightness,
+            "resolution":self.resolutionGetSet
         }

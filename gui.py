@@ -14,6 +14,8 @@ def Gui(controls, menus, settings, camera=None):
 
     font = pygame.font.Font(
         'freesansbold.ttf', settings["display"]["fontsize"])
+    statsFont = pygame.font.Font(
+        'freesansbold.ttf', settings["display"]["fontsize"])
 
     clock = pygame.time.Clock()
 
@@ -36,9 +38,12 @@ def Gui(controls, menus, settings, camera=None):
 
         if camera is not None:
 
+            statsFont = pygame.font.Font(
+                'freesansbold.ttf', 8)
+            
             statsDetails = " ".join(
                 map(lambda x: f"{x}:{camera.directory()[x]()}", list(camera.directory().keys())))
-            stats = textGenerator(font, statsDetails,
+            stats = textGenerator(statsFont, statsDetails,
                                   (255, 255, 255), (0, 0, 0))
             statsRect = textToRect(stats)
 

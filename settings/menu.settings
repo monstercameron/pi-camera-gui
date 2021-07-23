@@ -73,8 +73,8 @@
           "name": "shutter",
           "type": "range",
           "options": {
-            "min": 0,
-            "max": 3200,
+            "min": 1000,
+            "max": 32000,
             "step": 1000
           },
           "value": 1000
@@ -83,8 +83,8 @@
           "name": "iso",
           "type": "range",
           "options": {
-            "min": 0,
-            "max": 800,
+            "min": 100,
+            "max": 1600,
             "step": 100
           },
           "value": 800
@@ -164,7 +164,7 @@
           "options": {
             "min": -100,
             "max": 100,
-            "step": 25
+            "step": 20
           },
           "value": 0
         },
@@ -172,11 +172,11 @@
           "name": "brightness",
           "type": "range",
           "options": {
-            "min": -100,
+            "min": 0,
             "max": 100,
-            "step": 25
+            "step": 10
           },
-          "value": 0
+          "value": 50
         },
         {
           "name": "saturation",
