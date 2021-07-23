@@ -15,7 +15,7 @@
           "value": 0
         },
         {
-          "name": "imageEffect",
+          "name": "imageeffect",
           "type": "list",
           "options": [
             "none",

@@ -39,7 +39,7 @@ def Gui(controls, menus, settings, camera=None):
         if camera is not None:
 
             statsFont = pygame.font.Font(
-                'freesansbold.ttf', 8)
+                'freesansbold.ttf', 10)
             
             statsDetails = " ".join(
                 map(lambda x: f"{x}:{camera.directory()[x]()}", list(camera.directory().keys())))
