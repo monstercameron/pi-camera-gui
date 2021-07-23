@@ -63,8 +63,10 @@ def menuLimits(menuPosArr, menus):
 def menuOptionType(menuPosArr, menus):
     if menuPosArr[3] == 1:
         return menus["menus"][menuPosArr[0]]["type"]
-    else:
+    elif menuPosArr[3] == 2:
         return menus["menus"][menuPosArr[0]]["options"][menuPosArr[1]]["type"]
+    else:
+        return "list"
 
 
 def menuOptionSelector(direction, menuPosArr):

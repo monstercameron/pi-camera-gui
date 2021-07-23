@@ -1,94 +1,194 @@
 {
-    "menus": [
+  "menus": [
+    {
+      "name": "auto",
+      "type": "list",
+      "options": [
         {
-            "name": "auto",
-            "type": "list",
-            "options": [
-                {
-                    "name": "Quality",
-                    "type": "list",
-                    "options": [
-                        "low",
-                        "medium",
-                        "high",
-                        "ultra"
-                    ],
-                    "value": "high"
-                },
-                {
-                    "name": "image quality",
-                    "type": "range",
-                    "options": {
-                        "min": 10,
-                        "max": 100,
-                        "step": 10
-                    },
-                    "value": 28
-                }
-            ]
+          "name": "exposurecomp",
+          "type": "range",
+          "options": {
+            "min": -25,
+            "max": 25,
+            "step": 5
+          },
+          "value": 0
         },
         {
-            "name": "manual",
-            "type": "list",
-            "options": [
-                {
-                    "name": "exposure",
-                    "type": "list",
-                    "options": [
-                        "off",
-                        "auto",
-                        "night",
-                        "nightpreview",
-                        "backlight",
-                        "spotlight",
-                        "sports",
-                        "snow",
-                        "beach",
-                        "verylong",
-                        "fixedfps",
-                        "antishake",
-                        "fireworks"
-                    ],
-                    "value": "night"
-                },
-                {
-                    "name": "shutter",
-                    "type": "range",
-                    "options": {
-                        "min": 0,
-                        "max": 32001,
-                        "step": 1000
-                    },
-                    "value": 1000
-                },
-                {
-                    "name": "iso",
-                    "type": "range",
-                    "options": {
-                        "min": 0,
-                        "max": 801,
-                        "step": 100
-                    },
-                    "value": 800
-                },
-                {
-                    "name": "awb",
-                    "type": "list",
-                    "options": [
-                        "off",
-                        "auto",
-                        "sunlight",
-                        "cloudy",
-                        "shade",
-                        "tungsten",
-                        "fluorescent",
-                        "incandescent",
-                        "flash",
-                        "horizon"
-                    ],
-                    "value": "auto"
-                }
-            ]
+          "name": "imageEffect",
+          "type": "list",
+          "options": [
+            "none",
+            "negative",
+            "solarize",
+            "sketch",
+            "denoise",
+            "emboss",
+            "oilpaint",
+            "hatch",
+            "gpen",
+            "pastel",
+            "watercolor",
+            "film",
+            "blur",
+            "saturation",
+            "colorswap",
+            "washedout",
+            "posterise",
+            "colorpoint",
+            "colorbalance",
+            "cartoon",
+            "deinterlace1",
+            "deinterlace2"
+          ],
+          "value": "none"
         }
-    ]
+      ]
+    },
+    {
+      "name": "manual",
+      "type": "list",
+      "options": [
+        {
+          "name": "exposure",
+          "type": "list",
+          "options": [
+            "off",
+            "auto",
+            "night",
+            "nightpreview",
+            "backlight",
+            "spotlight",
+            "sports",
+            "snow",
+            "beach",
+            "verylong",
+            "fixedfps",
+            "antishake",
+            "fireworks"
+          ],
+          "value": "night"
+        },
+        {
+          "name": "shutter",
+          "type": "range",
+          "options": {
+            "min": 0,
+            "max": 3200,
+            "step": 1000
+          },
+          "value": 1000
+        },
+        {
+          "name": "iso",
+          "type": "range",
+          "options": {
+            "min": 0,
+            "max": 800,
+            "step": 100
+          },
+          "value": 800
+        },
+        {
+          "name": "awb",
+          "type": "list",
+          "options": [
+            "off",
+            "auto",
+            "sunlight",
+            "cloudy",
+            "shade",
+            "tungsten",
+            "fluorescent",
+            "incandescent",
+            "flash",
+            "horizon"
+          ],
+          "value": "auto"
+        }
+      ]
+    },
+    {
+      "name": "image settings",
+      "type": "list",
+      "options": [
+        {
+          "name": "resolution",
+          "type": "list",
+          "options": [
+            "1280,720",
+            "1920,1080",
+            "2560,1440",
+            "3840,2160",
+            "4000,3000",
+            "4056,3040",
+            "1000,1000",
+            "2000,2000",
+            "3000,3000"
+          ],
+          "value": "1000,1000"
+        },
+        {
+          "name": "dynamicRangeCompression",
+          "type": "list",
+          "options": [
+            "off",
+            "low",
+            "medium",
+            "high"
+          ],
+          "value": "off"
+        },
+        {
+          "name": "denoise",
+          "type": "list",
+          "options": [
+            true,
+            false
+          ],
+          "value": false
+        },
+        {
+          "name": "sharpness",
+          "type": "range",
+          "options": {
+            "min": -100,
+            "max": 100,
+            "step": 25
+          },
+          "value": 0
+        },
+        {
+          "name": "contrast",
+          "type": "range",
+          "options": {
+            "min": -100,
+            "max": 100,
+            "step": 25
+          },
+          "value": 0
+        },
+        {
+          "name": "brightness",
+          "type": "range",
+          "options": {
+            "min": -100,
+            "max": 100,
+            "step": 25
+          },
+          "value": 0
+        },
+        {
+          "name": "saturation",
+          "type": "range",
+          "options": {
+            "min": -100,
+            "max": 100,
+            "step": 25
+          },
+          "value": 0
+        }
+      ]
+    }
+  ]
 }

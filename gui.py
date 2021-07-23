@@ -123,7 +123,7 @@ def menu(pygame, surface, font, menuPos, menus, settings, camera=None):
                 textRect = textToRect(text)
                 subTextRect = textRect
                 surface.blit(text,
-                             (150, padding+textRect.height*count))
+                             (250, padding+textRect.height*count))
 
                 # drawing sub menu options bitmap to screen
                 if "options" in option and count == menuPos[1] and menuPos[3] > 1:
@@ -143,6 +143,6 @@ def menu(pygame, surface, font, menuPos, menus, settings, camera=None):
 
                     textRect = textToRect(text)
                     surface.blit(text,
-                                 (200 + padding + subTextRect.width, padding+subTextRect.height*count))
+                                 (350 + padding + subTextRect.width, padding+subTextRect.height*count))
                 # break
         # break
