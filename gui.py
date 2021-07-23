@@ -1,7 +1,7 @@
 import pygame
 
 
-def Gui(controls, menus, settings):
+def Gui(controls, menus, settings, camera=None):
     pygame.init()
     screen = pygame.display.set_mode(
         (settings["display"]["height"], settings["display"]["width"]))
@@ -19,6 +19,7 @@ def Gui(controls, menus, settings):
 
     menuPositions = [0, 0, 0, 0]  # menu, submenu, option, level
 
+    firstLoop = True
     done = False
     while not done:
         if settings["display"]["showmenu"]:
@@ -28,9 +29,22 @@ def Gui(controls, menus, settings):
             if event.type == pygame.QUIT:
                 done = True
 
-        # print(menuPositions)
-        screen.blit(layer, (0, 0))
-        pygame.display.flip()
+        if settings["mode"]["dev"]:
+            pygamesScreenRaw = pygame.image.tostring(layer, 'RGBA')
+            if firstLoop:
+                o = camera.self.camera.add_overlay(pygamesScreenRaw, size=(
+                    1280, 720), fullscreen=False,
+                    window=(0, 0, settings["display"]["height"], settings["display"]["width"]))
+                o.alpha = 255
+                o.layer = 3
+                firstLoop = not firstLoop
+            else:
+                o.update(pygamesScreenRaw)
+        else:
+            # print(menuPositions)
+            screen.blit(layer, (0, 0))
+            pygame.display.flip()
+
         clock.tick(settings["display"]["refreshrate"])
     pygame.quit()
 
