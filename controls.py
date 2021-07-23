@@ -1,21 +1,28 @@
+import copy
+from deepdiff import DeepDiff
+
 def cameraControls(pygame, event, menuPos, menus, camera=None):
+
+    # storing old menu to diff check for changes
+    menuOptionsDiff = [copy.deepcopy(menus)]
+
     if event.type == pygame.KEYDOWN:
         # print(event.key)
-        print(
-            f"pos: {menuPos} || menu len: {menuLimits(menuPos, menus)} || type: {menuOptionType(menuPos, menus)}")
+        # print(
+        #     f"pos: {menuPos} || menu len: {menuLimits(menuPos, menus)} || type: {menuOptionType(menuPos, menus)}")
         if event.key == pygame.K_UP:
             # print("up")
             if menuOptionType(menuPos, menus) == "list":
-                menuOptionUpdateListValue(1, menuPos, menus)
+                menuOptionUpdateListValue(1, menuPos, menus, menuOptionsDiff)
             elif menuOptionType(menuPos, menus) == "range":
-                menuOptionUpdateRangeValue(1, menuPos, menus)
+                menuOptionUpdateRangeValue(1, menuPos, menus, menuOptionsDiff)
 
         elif event.key == pygame.K_DOWN:
             # print("down")
             if menuOptionType(menuPos, menus) == "list":
-                menuOptionUpdateListValue(-1, menuPos, menus)
+                menuOptionUpdateListValue(-1, menuPos, menus, menuOptionsDiff)
             elif menuOptionType(menuPos, menus) == "range":
-                menuOptionUpdateRangeValue(-1, menuPos, menus)
+                menuOptionUpdateRangeValue(-1, menuPos, menus, menuOptionsDiff)
 
         elif event.key == pygame.K_RIGHT:
             # print("right")
@@ -24,6 +31,9 @@ def cameraControls(pygame, event, menuPos, menus, camera=None):
         elif event.key == pygame.K_LEFT:
             # print("left")
             menuOptionSelector(-1, menuPos)
+        # print("Len of diff arr -> ",len(menuOptionsDiff))
+        # print("Diff? -> ",menuOptionsDiffer(menuOptionsDiff))
+        menuOptionsApplyCameraSettings(camera, menuPos, menus, menuOptionsDiff)
 
 
 def menuLimits(menuPosArr, menus):
@@ -57,7 +67,7 @@ def menuOptionSelector(direction, menuPosArr):
             menuPosArr[3] = menuPosArr[3] - 1
 
 
-def menuOptionUpdateRangeValue(direction, menuPosArr, menus):
+def menuOptionUpdateRangeValue(direction, menuPosArr, menus, menuDiffArr):
     if direction > 0:
         if menus["menus"][menuPosArr[0]]["options"][menuPosArr[1]]["value"] < menus["menus"][menuPosArr[0]]["options"][menuPosArr[1]]["options"]["max"]:
             menus["menus"][menuPosArr[0]]["options"][menuPosArr[1]]["value"] = \
@@ -70,23 +80,37 @@ def menuOptionUpdateRangeValue(direction, menuPosArr, menus):
                 menus["menus"][menuPosArr[0]]["options"][menuPosArr[1]]["value"] -\
                 menus["menus"][menuPosArr[0]
                                ]["options"][menuPosArr[1]]["options"]["step"]
+    menuDiffArr.insert(0,menus)
 
 
-def menuOptionUpdateListValue(direction, menuPosArr, menus):
+def menuOptionUpdateListValue(direction, menuPosArr, menus, menuDiffArr):
     if direction > 0:
         if menuPosArr[menuPosArr[3]] >= 1:
             menuPosArr[menuPosArr[3]] = menuPosArr[menuPosArr[3]] - 1
-        print('over here')
     else:
         if menuPosArr[menuPosArr[3]] >= menuLimits(menuPosArr, menus)-1:
             menuPosArr[menuPosArr[3]] = 0
-            print('here')
         else:
             menuPosArr[menuPosArr[3]] = menuPosArr[menuPosArr[3]] + 1
-            print('there')
 
     # update value based on menu position
     if menuPosArr[2] > 0:
         menus["menus"][menuPosArr[0]]["options"][menuPosArr[1]]["value"] = \
             menus["menus"][menuPosArr[0]]["options"][menuPosArr[1]
                                                      ]["options"][menuPosArr[2]]
+        menuDiffArr.insert(0, menus)
+
+
+
+def menuOptionsApplyCameraSettings(camera, menuPosArr, menus, menuDiffArr):
+    if menuOptionsDiffer(menuDiffArr) != -1 and menuPosArr[3] == 2:
+        print('changes applied')
+    else:
+        print('no changes applied')
+
+
+def menuOptionsDiffer(menuDiffArr):
+    if len(menuDiffArr) > 1:
+        return DeepDiff(menuDiffArr[0], menuDiffArr[1], ignore_order=True)
+    else:
+        return -1
