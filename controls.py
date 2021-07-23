@@ -52,9 +52,9 @@ def menuLimits(menuPosArr, menus):
         if menuPosArr[3] == 0:
             return len(menus["menus"])
         elif menuPosArr[3] == 1:
-            return len(menus["menus"][menuPosArr[1]]["options"])
+            return len(menus["menus"][menuPosArr[0]]["options"])
         elif menuPosArr[3] == 2:
-            return len(menus["menus"][menuPosArr[1]]["options"][menuPosArr[2]]["options"])
+            return len(menus["menus"][menuPosArr[0]]["options"][menuPosArr[1]]["options"])
     except:
         print("Out of range")
     return 0
@@ -128,7 +128,8 @@ def menuOptionsApplyCameraSettings(camera, menuPosArr, menus, menuDiffArr):
         # print("new value drill down", diff['values_changed'][list(diff['values_changed'].keys())[0]])
         # {'values_changed': {"root['menus'][0]['options'][1]['value']": {'new_value': 28, 'old_value': 18}}}
     else:
-        print('no changes applied')
+        # print('no changes applied')
+        pass
 
 
 def menuOptionsDiffer(menuDiffArr):
