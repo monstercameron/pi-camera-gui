@@ -30,7 +30,7 @@ def Gui(controls, menus, settings, camera=None):
             if event.type == pygame.QUIT:
                 done = True
 
-        if settings["mode"]["dev"]:
+        if camera is not None:
             pygamesScreenRaw = pygame.image.tostring(layer, 'RGBA')
             if firstLoop:
                 o = camera.getCamera().add_overlay(
@@ -50,7 +50,7 @@ def Gui(controls, menus, settings, camera=None):
             pygame.display.flip()
 
         clock.tick(settings["display"]["refreshrate"])
-    if settings["mode"]["dev"]:
+    if camera is not None:
         camera.stopPreview()
         camera.closeCamera()
 
