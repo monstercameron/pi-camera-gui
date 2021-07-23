@@ -11,7 +11,8 @@
             "medium",
             "high",
             "ultra"
-          ]
+          ],
+          "value": "ultra"
         },
         {
           "name": "test range",
@@ -19,9 +20,9 @@
           "options": {
             "min": 1,
             "max": 10,
-            "step": 1,
-            "value": 5
-          }
+            "step": 1
+          },
+          "value": 1
         }
       ]
     },
@@ -36,7 +37,8 @@
             "medium",
             "high",
             "ultra"
-          ]
+          ],
+          "value": "medium"
         },
         {
           "name": "test range 2",
@@ -44,9 +46,9 @@
           "options": {
             "min": 5,
             "max": 100,
-            "step": 1,
-            "value": 50
-          }
+            "step": 1
+          },
+          "value": 45
         }
       ]
     }

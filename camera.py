@@ -1,4 +1,4 @@
-# import picamera
+import picamera
 
 def captureImage(settings):
     pass

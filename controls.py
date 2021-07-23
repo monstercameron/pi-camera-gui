@@ -1,36 +1,28 @@
 def cameraControls(pygame, event, menuPos, menus):
     if event.type == pygame.KEYDOWN:
         # print(event.key)
+
         if event.key == pygame.K_UP:
             # print("up")
             if menuOptionType(menuPos, menus) == "list":
-                if menuPos[menuPos[3]] >= 1:
-                    menuPos[menuPos[3]] = menuPos[menuPos[3]] - 1
+                menuOptionUpdateListValue(1, menuPos, menus)
             elif menuOptionType(menuPos, menus) == "range":
-                menuOptionUpdateValue(1, menuPos, menus)
+                menuOptionUpdateRangeValue(1, menuPos, menus)
 
         elif event.key == pygame.K_DOWN:
             # print("down")
-            # print("menupos-->", menuPos, " | menu lenght-->",
-            #       menuLimits(menuPos, menus))
             if menuOptionType(menuPos, menus) == "list":
-                if menuPos[menuPos[3]] >= menuLimits(menuPos, menus)-1:
-                    menuPos[menuPos[3]] = 0
-                else:
-                    menuPos[menuPos[3]] = menuPos[menuPos[3]] + 1
+                menuOptionUpdateListValue(-1, menuPos, menus)
             elif menuOptionType(menuPos, menus) == "range":
-                menuOptionUpdateValue(-1, menuPos, menus)
+                menuOptionUpdateRangeValue(-1, menuPos, menus)
 
         elif event.key == pygame.K_RIGHT:
             # print("right")
-            if menuPos[3] <= 1:
-                menuPos[3] = menuPos[3] + 1
+            menuOptionSelector(1, menuPos)
 
         elif event.key == pygame.K_LEFT:
             # print("left")
-            if menuPos[3] >= 1:
-                menuPos[menuPos[3]] = 0
-                menuPos[3] = menuPos[3] - 1
+            menuOptionSelector(-1, menuPos)
 
 
 def menuLimits(menuPosArr, menus):
@@ -59,14 +51,42 @@ def menuOptionType(menuPosArr, menus):
     return menus["menus"][menuPosArr[0]]["options"][menuPosArr[1]]["type"]
 
 
-def menuOptionUpdateValue(direction, menuPosArr, menus):
+def menuOptionSelector(direction, menuPosArr):
     if direction > 0:
-        if menus["menus"][menuPosArr[0]]["options"][menuPosArr[1]]["options"]["value"] < menus["menus"][menuPosArr[0]]["options"][menuPosArr[1]]["options"]["max"]:
-            menus["menus"][menuPosArr[0]]["options"][menuPosArr[1]]["options"]["value"] = \
-                menus["menus"][menuPosArr[0]]["options"][menuPosArr[1]]["options"]["value"] +\
-                    menus["menus"][menuPosArr[0]]["options"][menuPosArr[1]]["options"]["step"]
+        if menuPosArr[3] <= 1:
+            menuPosArr[3] = menuPosArr[3] + 1
     else:
-        if menus["menus"][menuPosArr[0]]["options"][menuPosArr[1]]["options"]["value"] > menus["menus"][menuPosArr[0]]["options"][menuPosArr[1]]["options"]["min"]:
-            menus["menus"][menuPosArr[0]]["options"][menuPosArr[1]]["options"]["value"] = \
-                menus["menus"][menuPosArr[0]]["options"][menuPosArr[1]]["options"]["value"] -\
-                    menus["menus"][menuPosArr[0]]["options"][menuPosArr[1]]["options"]["step"]
+        if menuPosArr[3] >= 1:
+            menuPosArr[menuPosArr[3]] = 0
+            menuPosArr[3] = menuPosArr[3] - 1
+
+
+def menuOptionUpdateRangeValue(direction, menuPosArr, menus):
+    if direction > 0:
+        if menus["menus"][menuPosArr[0]]["options"][menuPosArr[1]]["value"] < menus["menus"][menuPosArr[0]]["options"][menuPosArr[1]]["options"]["max"]:
+            menus["menus"][menuPosArr[0]]["options"][menuPosArr[1]]["value"] = \
+                menus["menus"][menuPosArr[0]]["options"][menuPosArr[1]]["value"] +\
+                menus["menus"][menuPosArr[0]
+                               ]["options"][menuPosArr[1]]["options"]["step"]
+    else:
+        if menus["menus"][menuPosArr[0]]["options"][menuPosArr[1]]["value"] > menus["menus"][menuPosArr[0]]["options"][menuPosArr[1]]["options"]["min"]:
+            menus["menus"][menuPosArr[0]]["options"][menuPosArr[1]]["value"] = \
+                menus["menus"][menuPosArr[0]]["options"][menuPosArr[1]]["value"] -\
+                menus["menus"][menuPosArr[0]
+                               ]["options"][menuPosArr[1]]["options"]["step"]
+
+
+def menuOptionUpdateListValue(direction, menuPosArr, menus):
+    if direction > 0:
+        if menuPosArr[menuPosArr[3]] >= 1:
+            menuPosArr[menuPosArr[3]] = menuPosArr[menuPosArr[3]] - 1
+    else:
+        if menuPosArr[menuPosArr[3]] >= menuLimits(menuPosArr, menus)-1:
+            menuPosArr[menuPosArr[3]] = 0
+        else:
+            menuPosArr[menuPosArr[3]] = menuPosArr[menuPosArr[3]] + 1
+        
+    # update value based on menu position
+    if menuPosArr[2] > 0:
+        menus["menus"][menuPosArr[0]]["options"][menuPosArr[1]]["value"] = \
+            menus["menus"][menuPosArr[0]]["options"][menuPosArr[1]]["options"][menuPosArr[2]]

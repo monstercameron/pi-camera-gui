@@ -1,6 +1,6 @@
 import json
-settings = 'settings/camera.settings'
-menus = 'settings/menu.settings'
+settingsFile = 'settings/camera.settings'
+menusFile = 'settings/menu.settings'
 
 def saveSettings(file, dict):
     try:

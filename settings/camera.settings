@@ -1,15 +1,1 @@
-{
-  "display": {
-    "height": 500,
-    "width": 500,
-    "caption": "Picamera GUI",
-    "refreshrate": 60,
-    "fontsize": 24,
-    "padding": 10,
-    "showmenu": true
-  },
-  "files":{
-      "path":"/images",
-      "extension":"jpg"
-  }
-}
+{"display": {"height": 500, "width": 500, "caption": "Picamera GUI", "refreshrate": 60, "fontsize": 24, "padding": 10, "showmenu": true}, "files": {"path": "/images", "extension": "jpg"}}

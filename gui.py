@@ -95,10 +95,10 @@ def menu(pygame, surface, font, menuPos, menus, settings):
                     # check option type
                     if option["type"] == "list":
                         text = textGenerator(
-                            font, option["options"][menuPos[2]], foreground, background)
+                            font, f'''{option["value"]} --> {option["options"][menuPos[2]]}''', foreground, background)
                     elif option["type"] == "range":
                         text = textGenerator(
-                            font, str(option["options"]["value"]), foreground, background)
+                            font, str(option["value"]), foreground, background)
 
                     textRect = textToRect(text)
                     surface.blit(text,
