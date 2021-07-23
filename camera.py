@@ -5,16 +5,23 @@ class Camera:
         self.camera = picamera.PiCamera()
         self.menus = menus
         self.settings = settings
+        self.setCameraDefaults()
 
-    def startPreview():
+    def setCameraDefaults(self):
+        self.camera.exposure_mode = 'auto'
+
+    def getCamera(self):
+        return self.camera
+
+    def startPreview(self):
         self.camera.start_preview(
             fullscreen=self.settings["display"]["fullscreen"], \
-                window=(0,0,self.settings["display"]["height"],self.settings["display"]["width"]))
+                window=(110,110,self.settings["display"]["width"],self.settings["display"]["height"]))
 
-    def stopPreview():
+    def stopPreview(self):
         self.camera.stop_preview()
 
-    def closeCamera(cameraClass):
+    def closeCamera(self):
         self.camera.close()
 
     def captureImage(settings):

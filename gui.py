@@ -4,12 +4,12 @@ import pygame
 def Gui(controls, menus, settings, camera=None):
     pygame.init()
     screen = pygame.display.set_mode(
-        (settings["display"]["height"], settings["display"]["width"]))
+        (settings["display"]["width"], settings["display"]["height"]))
     screen.fill((0, 0, 0))
     pygame.display.set_caption(settings["display"]["caption"])
 
     layer = pygame.Surface(
-        (settings["display"]["height"], settings["display"]["width"]), pygame.SRCALPHA)
+        (settings["display"]["width"], settings["display"]["height"]), pygame.SRCALPHA)
     layer.fill((255, 255, 255, 255))
 
     font = pygame.font.Font(
@@ -19,6 +19,7 @@ def Gui(controls, menus, settings, camera=None):
 
     menuPositions = [0, 0, 0, 0]  # menu, submenu, option, level
 
+    camera.startPreview()
     firstLoop = True
     done = False
     while not done:
@@ -32,9 +33,12 @@ def Gui(controls, menus, settings, camera=None):
         if settings["mode"]["dev"]:
             pygamesScreenRaw = pygame.image.tostring(layer, 'RGBA')
             if firstLoop:
-                o = camera.self.camera.add_overlay(pygamesScreenRaw, size=(
-                    1280, 720), fullscreen=False,
-                    window=(0, 0, settings["display"]["height"], settings["display"]["width"]))
+                o = camera.getCamera().add_overlay(
+                    pygamesScreenRaw,
+                    size=(settings["display"]["width"],
+                          settings["display"]["height"]),
+                    fullscreen=False,
+                    window=(110, 110, settings["display"]["width"], settings["display"]["height"]))
                 o.alpha = 255
                 o.layer = 3
                 firstLoop = not firstLoop
@@ -46,6 +50,10 @@ def Gui(controls, menus, settings, camera=None):
             pygame.display.flip()
 
         clock.tick(settings["display"]["refreshrate"])
+    if settings["mode"]["dev"]:
+        camera.stopPreview()
+        camera.closeCamera()
+
     pygame.quit()
 
 
@@ -61,7 +69,7 @@ def textToRect(text):
 
 
 def menu(pygame, surface, font, menuPos, menus, settings):
-    surface.fill((255, 255, 255, 255))
+    surface.fill((0, 0, 0, 0))
     highlighted = (255, 255, 255)
     normal = (0, 0, 0)
 
