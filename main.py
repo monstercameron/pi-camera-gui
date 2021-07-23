@@ -9,11 +9,11 @@ if __name__ == '__main__':
     menus = jsonToSettings(openSettings(menusFile))
 
     if settings["mode"]["dev"]:
-        from camera import Camera
-        Gui(cameraControls, menus, settings,\
-             camera=(Camera(menus, settings)))
-    else:
         Gui(cameraControls, menus, settings)
+    else:
+        from camera import Camera
+        Gui(cameraControls, menus, settings,
+            camera=(Camera(menus, settings)))
 
     # save settings and menus
     saveSettings(settingsFile, settings)

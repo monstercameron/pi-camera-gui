@@ -19,14 +19,17 @@ def Gui(controls, menus, settings, camera=None):
 
     menuPositions = [0, 0, 0, 0]  # menu, submenu, option, level
 
-    camera.startPreview()
+    #  start the picamera preview
+    if camera is not None:
+        camera.startPreview()
+
     firstLoop = True
     done = False
     while not done:
         if settings["display"]["showmenu"]:
-            menu(pygame, layer, font, menuPositions, menus, settings)
+            menu(pygame, layer, font, menuPositions, menus, settings, camera=camera)
         for event in pygame.event.get():
-            controls(pygame, event, menuPositions, menus)
+            controls(pygame, event, menuPositions, menus, camera=camera)
             if event.type == pygame.QUIT:
                 done = True
 
@@ -68,8 +71,12 @@ def textToRect(text):
     return textRect
 
 
-def menu(pygame, surface, font, menuPos, menus, settings):
-    surface.fill((0, 0, 0, 0))
+def menu(pygame, surface, font, menuPos, menus, settings, camera=None):
+    if camera is None:
+        surface.fill((255, 255, 255, 255))
+    else:
+        surface.fill((0, 0, 0, 0))
+
     highlighted = (255, 255, 255)
     normal = (0, 0, 0)
 

@@ -23,6 +23,21 @@ class Camera:
 
     def closeCamera(self):
         self.camera.close()
+    
+    def exposure(self, value=None):
+        if value is not None:
+            self.camera.exposure_mode = value
+        return self.camera.exposure_mode
+    
+    def shutterSpeed(self, value=None):
+        if value is not None:
+            self.camera.shutter_speed = value
+        return self.camera.shutter_speed
+    
+    def iso(self, value=None):
+        if value is not None:
+            self.camera.iso = value
+        return self.camera.iso
 
     def captureImage(settings):
         pass
