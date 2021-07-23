@@ -1,1 +1,21 @@
-{"display": {"height": 720, "width": 1280, "caption": "Picamera GUI", "refreshrate": 3, "fontsize": 24, "padding": 10, "showmenu": true, "fullscreen": false}, "files": {"path": "/images", "extension": "jpg"}, "mode": {"dev": false, "cameramode": "manual"}, "state": {}}
+{
+    "display": {
+        "height": 720,
+        "width": 1280,
+        "caption": "Picamera GUI",
+        "refreshrate": 30,
+        "fontsize": 24,
+        "padding": 10,
+        "showmenu": true,
+        "fullscreen": false
+    },
+    "files": {
+        "path": "/images",
+        "extension": "jpg"
+    },
+    "mode": {
+        "dev": false,
+        "cameramode": "manual"
+    },
+    "state": {}
+}

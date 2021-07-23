@@ -27,14 +27,25 @@ def Gui(controls, menus, settings, camera=None):
     done = False
     while not done:
         if settings["display"]["showmenu"]:
-            menu(pygame, layer, font, menuPositions, menus, settings, camera=camera)
+            menu(pygame, layer, font, menuPositions,
+                 menus, settings, camera=camera)
         for event in pygame.event.get():
             controls(pygame, event, menuPositions, menus, camera=camera)
             if event.type == pygame.QUIT:
                 done = True
 
         if camera is not None:
+
+            statsDetails = " ".join(
+                map(lambda x: f"{x}:{camera.directory()[x]()}", list(camera.directory().keys())))
+            stats = textGenerator(font, statsDetails,
+                                  (255, 255, 255), (0, 0, 0))
+            statsRect = textToRect(stats)
+
+            layer.blit(stats, (settings["display"]["width"]/2-statsRect.width/2,\
+                 settings["display"]["height"]-statsRect.height))
             pygamesScreenRaw = pygame.image.tostring(layer, 'RGBA')
+
             if firstLoop:
                 o = camera.getCamera().add_overlay(
                     pygamesScreenRaw,
@@ -59,6 +70,7 @@ def Gui(controls, menus, settings, camera=None):
         camera.closeCamera()
 
     pygame.quit()
+    exit()
 
 
 def textGenerator(font, text, foreground, background,):
@@ -92,7 +104,6 @@ def menu(pygame, surface, font, menuPos, menus, settings, camera=None):
 
         text = textGenerator(font, menu["name"], foreground, background)
         textRect = textToRect(text)
-        superTextRect = textRect
         padding = settings["display"]["padding"]
 
         # saving menu bitmap to layer
@@ -112,7 +123,7 @@ def menu(pygame, surface, font, menuPos, menus, settings, camera=None):
                 textRect = textToRect(text)
                 subTextRect = textRect
                 surface.blit(text,
-                             (100, padding+textRect.height*count))
+                             (150, padding+textRect.height*count))
 
                 # drawing sub menu options bitmap to screen
                 if "options" in option and count == menuPos[1] and menuPos[3] > 1:
@@ -132,6 +143,6 @@ def menu(pygame, surface, font, menuPos, menus, settings, camera=None):
 
                     textRect = textToRect(text)
                     surface.blit(text,
-                                 (100 + padding + subTextRect.width, padding+subTextRect.height*count))
+                                 (200 + padding + subTextRect.width, padding+subTextRect.height*count))
                 # break
         # break

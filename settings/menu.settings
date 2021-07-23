@@ -1,1 +1,77 @@
-{"menus": [{"name": "auto", "type": "list", "options": [{"name": "Quality", "type": "list", "options": ["low", "medium", "high", "ultra"], "value": "high"}, {"name": "image quality", "type": "range", "options": {"min": 10, "max": 100, "step": 10}, "value": 28}]}, {"name": "manual", "type": "list", "options": [{"name": "exposure", "type": "list", "options": ["off", "auto", "night", "nightpreview", "backlight", "spotlight", "sports", "snow", "beach", "verylong", "fixedfps", "antishake", "fireworks"], "value": "night"}, {"name": "shutter", "type": "range", "options": {"min": 100, "max": 32000, "step": 100}, "value": 19800}, {"name": "iso", "type": "range", "options": {"min": 1, "max": 1600, "step": 100}, "value": 600}]}]}
+{
+    "menus": [
+        {
+            "name": "auto",
+            "type": "list",
+            "options": [
+                {
+                    "name": "Quality",
+                    "type": "list",
+                    "options": [
+                        "low",
+                        "medium",
+                        "high",
+                        "ultra"
+                    ],
+                    "value": "high"
+                },
+                {
+                    "name": "image quality",
+                    "type": "range",
+                    "options": {
+                        "min": 10,
+                        "max": 100,
+                        "step": 10
+                    },
+                    "value": 28
+                }
+            ]
+        },
+        {
+            "name": "manual",
+            "type": "list",
+            "options": [
+                {
+                    "name": "exposure",
+                    "type": "list",
+                    "options": [
+                        "off",
+                        "auto",
+                        "night",
+                        "nightpreview",
+                        "backlight",
+                        "spotlight",
+                        "sports",
+                        "snow",
+                        "beach",
+                        "verylong",
+                        "fixedfps",
+                        "antishake",
+                        "fireworks"
+                    ],
+                    "value": "night"
+                },
+                {
+                    "name": "shutter",
+                    "type": "range",
+                    "options": {
+                        "min": 0,
+                        "max": 32001,
+                        "step": 1000
+                    },
+                    "value": 1000
+                },
+                {
+                    "name": "iso",
+                    "type": "range",
+                    "options": {
+                        "min": 0,
+                        "max": 801,
+                        "step": 100
+                    },
+                    "value": 800
+                }
+            ]
+        }
+    ]
+}
