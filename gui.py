@@ -50,7 +50,8 @@ def Gui(controls, menus, settings, camera=None):
         else:
             # print(menuPositions)
             screen.blit(layer, (0, 0))
-            pygame.display.flip()
+
+        pygame.display.flip()
 
         clock.tick(settings["display"]["refreshrate"])
     if camera is not None:

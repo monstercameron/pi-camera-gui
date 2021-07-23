@@ -1,39 +1,45 @@
 import copy
 from deepdiff import DeepDiff
 
+
 def cameraControls(pygame, event, menuPos, menus, camera=None):
 
     # storing old menu to diff check for changes
     menuOptionsDiff = [copy.deepcopy(menus)]
 
-    if event.type == pygame.KEYDOWN:
-        # print(event.key)
-        # print(
-        #     f"pos: {menuPos} || menu len: {menuLimits(menuPos, menus)} || type: {menuOptionType(menuPos, menus)}")
-        if event.key == pygame.K_UP:
-            # print("up")
-            if menuOptionType(menuPos, menus) == "list":
-                menuOptionUpdateListValue(1, menuPos, menus, menuOptionsDiff)
-            elif menuOptionType(menuPos, menus) == "range":
-                menuOptionUpdateRangeValue(1, menuPos, menus, menuOptionsDiff)
+    # if event.type == pygame.KEYDOWN:
+    keys = pygame.key.get_pressed()
+    # print(event.key)
+    # print(
+    #     f"pos: {menuPos} || menu len: {menuLimits(menuPos, menus)} || type: {menuOptionType(menuPos, menus)}")
+    # if event.key == pygame.K_UP:
+    if keys[pygame.K_UP]:
+        # print("up")
+        if menuOptionType(menuPos, menus) == "list":
+            menuOptionUpdateListValue(1, menuPos, menus, menuOptionsDiff)
+        elif menuOptionType(menuPos, menus) == "range":
+            menuOptionUpdateRangeValue(1, menuPos, menus, menuOptionsDiff)
 
-        elif event.key == pygame.K_DOWN:
-            # print("down")
-            if menuOptionType(menuPos, menus) == "list":
-                menuOptionUpdateListValue(-1, menuPos, menus, menuOptionsDiff)
-            elif menuOptionType(menuPos, menus) == "range":
-                menuOptionUpdateRangeValue(-1, menuPos, menus, menuOptionsDiff)
+    # elif event.key == pygame.K_DOWN:
+    elif keys[pygame.K_DOWN]:
+        # print("down")
+        if menuOptionType(menuPos, menus) == "list":
+            menuOptionUpdateListValue(-1, menuPos, menus, menuOptionsDiff)
+        elif menuOptionType(menuPos, menus) == "range":
+            menuOptionUpdateRangeValue(-1, menuPos, menus, menuOptionsDiff)
 
-        elif event.key == pygame.K_RIGHT:
-            # print("right")
-            menuOptionSelector(1, menuPos)
+    # elif event.key == pygame.K_RIGHT:
+    elif keys[pygame.K_RIGHT]:
+        # print("right")
+        menuOptionSelector(1, menuPos)
 
-        elif event.key == pygame.K_LEFT:
-            # print("left")
-            menuOptionSelector(-1, menuPos)
-        # print("Len of diff arr -> ",len(menuOptionsDiff))
-        # print("Diff? -> ",menuOptionsDiffer(menuOptionsDiff))
-        menuOptionsApplyCameraSettings(camera, menuPos, menus, menuOptionsDiff)
+    # elif event.key == pygame.K_LEFT:
+    elif keys[pygame.K_LEFT]:
+        # print("left")
+        menuOptionSelector(-1, menuPos)
+    # print("Len of diff arr -> ",len(menuOptionsDiff))
+    print("Diff? -> ", menuOptionsDiffer(menuOptionsDiff))
+    menuOptionsApplyCameraSettings(camera, menuPos, menus, menuOptionsDiff)
 
 
 def menuLimits(menuPosArr, menus):
@@ -80,7 +86,7 @@ def menuOptionUpdateRangeValue(direction, menuPosArr, menus, menuDiffArr):
                 menus["menus"][menuPosArr[0]]["options"][menuPosArr[1]]["value"] -\
                 menus["menus"][menuPosArr[0]
                                ]["options"][menuPosArr[1]]["options"]["step"]
-    menuDiffArr.insert(0,menus)
+    menuDiffArr.insert(0, menus)
 
 
 def menuOptionUpdateListValue(direction, menuPosArr, menus, menuDiffArr):
@@ -101,10 +107,22 @@ def menuOptionUpdateListValue(direction, menuPosArr, menus, menuDiffArr):
         menuDiffArr.insert(0, menus)
 
 
-
 def menuOptionsApplyCameraSettings(camera, menuPosArr, menus, menuDiffArr):
-    if menuOptionsDiffer(menuDiffArr) != -1 and menuPosArr[3] == 2:
-        print('changes applied')
+    diff = menuOptionsDiffer(menuDiffArr)
+
+    if diff != -1 and menuPosArr[3] == 2 and camera is not None and "values_changed" in diff:
+        menuOptionName = menus["menus"][menuPosArr[0]
+                                        ]["options"][menuPosArr[1]]["name"]
+
+        directory = camera.directory()
+
+        if menuOptionName in directory:
+            directory[menuOptionName](value=
+                diff['values_changed'][list(diff['values_changed'].keys())[0]]["new_value"])
+
+            print('changes applied')
+        # print("new value drill down", diff['values_changed'][list(diff['values_changed'].keys())[0]])
+        # {'values_changed': {"root['menus'][0]['options'][1]['value']": {'new_value': 28, 'old_value': 18}}}
     else:
         print('no changes applied')
 
