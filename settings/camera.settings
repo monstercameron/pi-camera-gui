@@ -10,11 +10,12 @@
         "fullscreen": false
     },
     "files": {
-        "path": "/images",
+        "template":"{}_picamera_{}",
+        "path": "./images",
         "extension": "jpg"
     },
     "mode": {
-        "dev": false,
+        "dev": true,
         "cameramode": "manual"
     },
     "state": {}

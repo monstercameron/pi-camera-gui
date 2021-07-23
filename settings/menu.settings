@@ -70,6 +70,23 @@
                         "step": 100
                     },
                     "value": 800
+                },
+                {
+                    "name": "awb",
+                    "type": "list",
+                    "options": [
+                        "off",
+                        "auto",
+                        "sunlight",
+                        "cloudy",
+                        "shade",
+                        "tungsten",
+                        "fluorescent",
+                        "incandescent",
+                        "flash",
+                        "horizon"
+                    ],
+                    "value": "auto"
                 }
             ]
         }

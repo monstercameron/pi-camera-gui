@@ -10,8 +10,8 @@ def cameraControls(pygame, event, menuPos, menus, camera=None):
     # if event.type == pygame.KEYDOWN:
     keys = pygame.key.get_pressed()
     # print(event.key)
-    # print(
-    #     f"pos: {menuPos} || menu len: {menuLimits(menuPos, menus)} || type: {menuOptionType(menuPos, menus)}")
+    print(
+        f"pos: {menuPos} || menu len: {menuLimits(menuPos, menus)} || type: {menuOptionType(menuPos, menus)}")
     # if event.key == pygame.K_UP:
     if keys[pygame.K_UP]:
         # print("up")
@@ -37,8 +37,12 @@ def cameraControls(pygame, event, menuPos, menus, camera=None):
     elif keys[pygame.K_LEFT]:
         # print("left")
         menuOptionSelector(-1, menuPos)
+
+    if camera is not None:
+        camera.controls(pygame, keys)
+
     # print("Len of diff arr -> ",len(menuOptionsDiff))
-    print("Diff? -> ", menuOptionsDiffer(menuOptionsDiff))
+    # print("Diff? -> ", menuOptionsDiffer(menuOptionsDiff))
     menuOptionsApplyCameraSettings(camera, menuPos, menus, menuOptionsDiff)
 
 
