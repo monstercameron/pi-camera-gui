@@ -7,6 +7,10 @@ def cameraControls(pygame, event, menuPos, menus, camera=None):
     menuOptionsDiff = [copy.deepcopy(menus)]
 
     if event.type == pygame.KEYDOWN:
+        # if event.key == pygame.K_DOWN:
+        #     print('event key')
+        #     print(pygame.K_DOWN)
+        # return=13 down=274
         # keys = pygame.key.get_pressed()
         # print('Key down pressed: ', str(bool(keys[pygame.K_DOWN])))
 

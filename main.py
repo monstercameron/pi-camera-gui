@@ -1,6 +1,7 @@
 from settings import settingsFile, menusFile, jsonToSettings, openSettings, saveSettings
 from gui import *
 from controls import *
+from buttons import *
 
 
 if __name__ == '__main__':
@@ -9,10 +10,10 @@ if __name__ == '__main__':
     menus = jsonToSettings(openSettings(menusFile))
 
     if settings["mode"]["dev"]:
-        Gui(cameraControls, menus, settings)
+        Gui(cameraControls, menus, settings, Buttons)
     else:
         from camera import Camera
-        Gui(cameraControls, menus, settings,
+        Gui(cameraControls, menus, settings, Buttons,
             camera=(Camera(menus, settings)))
 
     # save settings and menus

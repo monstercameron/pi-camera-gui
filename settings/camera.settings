@@ -10,13 +10,21 @@
         "fullscreen": false
     },
     "files": {
-        "template":"{}_picamera_{}",
+        "template": "{}_picamera_{}",
         "path": "./images",
         "extension": "jpg"
     },
     "mode": {
-        "dev": false,
+        "dev": true,
         "cameramode": "manual"
     },
-    "state": {}
+    "state": {},
+    "buttons": [
+        {
+            "name": "capture",
+            "description":"take photos",
+            "gpio": 16,
+            "event": 274
+        }
+    ]
 }

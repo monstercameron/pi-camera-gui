@@ -1,11 +1,6 @@
 import pygame
-import pygame.locals
 
-from gpiozero import Button
-from time import sleep
-
-
-def Gui(controls, menus, settings, camera=None):
+def Gui(controls, menus, settings, Buttons, camera=None):
     pygame.init()
     screen = pygame.display.set_mode(
         (settings["display"]["width"], settings["display"]["height"]))
@@ -24,7 +19,6 @@ def Gui(controls, menus, settings, camera=None):
     clock = pygame.time.Clock()
 
     # take photo button
-    button = Button(16)
 
     menuPositions = [0, 0, 0, 0]  # menu, submenu, option, level
 
@@ -32,23 +26,14 @@ def Gui(controls, menus, settings, camera=None):
     if camera is not None:
         camera.startPreview()
 
+    # setting up the buttons
+    buttons = Buttons(settings)
+
     firstLoop = True
     done = False
-    # count = 0
-    pressed = False
     while not done:
 
-        # testing gpio
-        if button.is_pressed and not pressed:
-            evt = pygame.event.Event(pygame.KEYDOWN, key=pygame.K_RETURN)
-            pygame.event.post(evt)
-            # print('button pressed, count: ' + str(count))
-            # print(pygame.event.get())
-            # count = count + 1
-            pressed = not pressed
-            sleep(.25)
-        else:
-            pressed = not pressed
+        buttons.listen(pygame)
 
         if settings["display"]["showmenu"]:
             menu(pygame, layer, font, menuPositions,
