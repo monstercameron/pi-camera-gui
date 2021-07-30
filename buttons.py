@@ -5,23 +5,18 @@ from time import sleep
 
 class Buttons:
     def __init__(self, settings):
-        self.pressed = False
-        self.buttons = {}
+        self.buttons = None
         self.buttonsFromSettings(settings)
         # print(self.buttons)
 
     def listen(self, pygame):
         for key in self.buttons.keys():
-            if self.buttons[key]["button"].is_pressed and not self.pressed:
+            if self.buttons[key]["button"].is_pressed:
                 evt = pygame.event.Event(
                     pygame.KEYDOWN, key=self.buttons[key]["event"])
-
                 pygame.event.post(evt)
                 print(f"key: '{key}' was pressed")
-                self.pressed = not self.pressed
                 sleep(.25)
-            else:
-                self.pressed = not self.pressed
 
     def buttonsFromSettings(self, settings):
         # try:
@@ -36,3 +31,4 @@ class Buttons:
         # except Exception:
         #     print("error importing button configurations")
         #     print(Exception)
+        

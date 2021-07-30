@@ -23,6 +23,12 @@
         {
             "name": "capture",
             "description":"take photos",
+            "gpio": 15,
+            "event": 13
+        },
+        {
+            "name": "keydown",
+            "description":"menu down",
             "gpio": 16,
             "event": 274
         }
