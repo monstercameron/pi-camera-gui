@@ -119,8 +119,8 @@ class Camera:
     def captureVideo(self):
         pass
 
-    def controls(self, pygame, keys):
-        if keys[pygame.K_RETURN]:
+    def controls(self, pygame, key):
+        if key == pygame.K_RETURN:
             self.captureImage()
 
     def directory(self):

@@ -1,63 +1,46 @@
 import copy
 from deepdiff import DeepDiff
-from gpiozero import Button
-from time import sleep
-import pygame.locals
-
-button = Button(16)
 
 def cameraControls(pygame, event, menuPos, menus, camera=None):
-
-
-    evt = pygame.event.Event(pygame.locals.KEYDOWN,key=pygame.locals.K_RETURN)
-    count = 0
-    pressed = False
-    # testing gpio
-    if button.is_pressed and not pressed:
-        pygame.event.post(evt)
-        print('smile' + str(count))
-        count = count + 1
-        pressed = not pressed
-        sleep(.25)
-    else:
-        pressed = not pressed
 
     # storing old menu to diff check for changes
     menuOptionsDiff = [copy.deepcopy(menus)]
 
-    # if event.type == pygame.KEYDOWN:
-    keys = pygame.key.get_pressed()
-    # print(event.key)
-    print(
-        f"pos: {menuPos} || menu len: {menuLimits(menuPos, menus)} || type: {menuOptionType(menuPos, menus)}")
-    # if event.key == pygame.K_UP:
-    if keys[pygame.K_UP]:
-        # print("up")
-        if menuOptionType(menuPos, menus) == "list":
-            menuOptionUpdateListValue(1, menuPos, menus, menuOptionsDiff)
-        elif menuOptionType(menuPos, menus) == "range":
-            menuOptionUpdateRangeValue(1, menuPos, menus, menuOptionsDiff)
+    if event.type == pygame.KEYDOWN:
+        # keys = pygame.key.get_pressed()
+        # print('Key down pressed: ', str(bool(keys[pygame.K_DOWN])))
 
-    # elif event.key == pygame.K_DOWN:
-    elif keys[pygame.K_DOWN]:
-        # print("down")
-        if menuOptionType(menuPos, menus) == "list":
-            menuOptionUpdateListValue(-1, menuPos, menus, menuOptionsDiff)
-        elif menuOptionType(menuPos, menus) == "range":
-            menuOptionUpdateRangeValue(-1, menuPos, menus, menuOptionsDiff)
+        # print(
+        #     f"pos: {menuPos} || menu len: {menuLimits(menuPos, menus)} || type: {menuOptionType(menuPos, menus)}")
 
-    # elif event.key == pygame.K_RIGHT:
-    elif keys[pygame.K_RIGHT]:
-        # print("right")
-        menuOptionSelector(1, menuPos)
+        #   if keys[pygame.K_UP]:
+        if event.key == pygame.K_UP:
+            # print("up")
+            if menuOptionType(menuPos, menus) == "list":
+                menuOptionUpdateListValue(1, menuPos, menus, menuOptionsDiff)
+            elif menuOptionType(menuPos, menus) == "range":
+                menuOptionUpdateRangeValue(1, menuPos, menus, menuOptionsDiff)
 
-    # elif event.key == pygame.K_LEFT:
-    elif keys[pygame.K_LEFT]:
-        # print("left")
-        menuOptionSelector(-1, menuPos)
+        # elif keys[pygame.K_DOWN]:
+        elif event.key == pygame.K_DOWN:
+            # print("down")
+            if menuOptionType(menuPos, menus) == "list":
+                menuOptionUpdateListValue(-1, menuPos, menus, menuOptionsDiff)
+            elif menuOptionType(menuPos, menus) == "range":
+                menuOptionUpdateRangeValue(-1, menuPos, menus, menuOptionsDiff)
 
-    if camera is not None:
-        camera.controls(pygame, keys)
+        # elif keys[pygame.K_RIGHT]:
+        elif event.key == pygame.K_RIGHT:
+            # print("right")
+            menuOptionSelector(1, menuPos)
+
+        # elif keys[pygame.K_LEFT]:
+        elif event.key == pygame.K_LEFT:
+            # print("left")
+            menuOptionSelector(-1, menuPos)
+
+        if camera is not None:
+            camera.controls(pygame, event.key)
 
     # print("Len of diff arr -> ",len(menuOptionsDiff))
     # print("Diff? -> ", menuOptionsDiffer(menuOptionsDiff))
