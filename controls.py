@@ -1,8 +1,26 @@
 import copy
 from deepdiff import DeepDiff
+from gpiozero import Button
+from time import sleep
+import pygame.locals
 
+button = Button(16)
 
 def cameraControls(pygame, event, menuPos, menus, camera=None):
+
+
+    evt = pygame.event.Event(pygame.locals.KEYDOWN,key=pygame.locals.K_RETURN)
+    count = 0
+    pressed = False
+    # testing gpio
+    if button.is_pressed and not pressed:
+        pygame.event.post(evt)
+        print('smile' + str(count))
+        count = count + 1
+        pressed = not pressed
+        sleep(.25)
+    else:
+        pressed = not pressed
 
     # storing old menu to diff check for changes
     menuOptionsDiff = [copy.deepcopy(menus)]

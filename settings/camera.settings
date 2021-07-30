@@ -15,7 +15,7 @@
         "extension": "jpg"
     },
     "mode": {
-        "dev": false,
+        "dev": true,
         "cameramode": "manual"
     },
     "state": {}
