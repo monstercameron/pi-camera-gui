@@ -4,21 +4,20 @@
         "width": 1280,
         "caption": "Picamera GUI",
         "refreshrate": 30,
-        "fontsize": 24,
+        "fontsize": 32,
         "padding": 10,
         "showmenu": true,
         "fullscreen": false
     },
     "files": {
         "template": "{}_picamera_{}",
-        "path": "./images",
+        "path": "/home/pi/images/dcim/picamera",
         "extension": "jpg"
     },
     "mode": {
-        "dev": true,
+        "dev": false,
         "cameramode": "manual"
     },
-    "state": {},
     "buttons": [
         {
             "name": "capture",
@@ -27,10 +26,28 @@
             "event": 13
         },
         {
+            "name": "keyup",
+            "description":"menu up",
+            "gpio": 21,
+            "event": 273
+        },
+        {
+            "name": "keyright",
+            "description":"menu enter",
+            "gpio": 26,
+            "event": 275
+        },
+        {
             "name": "keydown",
             "description":"menu down",
             "gpio": 16,
             "event": 274
+        },
+        {
+            "name": "keyleft",
+            "description":"menu exit",
+            "gpio": 20,
+            "event": 276
         }
     ]
 }

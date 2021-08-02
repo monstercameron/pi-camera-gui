@@ -16,6 +16,8 @@ def cameraControls(pygame, event, menuPos, menus, camera=None):
 
         # print(
         #     f"pos: {menuPos} || menu len: {menuLimits(menuPos, menus)} || type: {menuOptionType(menuPos, menus)}")
+        if event.key == pygame.K_ESCAPE:
+            pygame.quit()
 
         #   if keys[pygame.K_UP]:
         if event.key == pygame.K_UP:
