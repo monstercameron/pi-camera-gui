@@ -2,36 +2,39 @@
     <!-- Main Menu (Left Sidebar) -->
     <container id="level_0" x="0" y="0" width="200" height="100%" 
                orientation="vertical" 
-               item_height="60" 
-               font_size="24"
-               bg_color="#222222EE" 
-               selected_color="#FFD700" 
-               unselected_color="#FFFFFF" 
+               item_height="@item_height_main" 
+               font_size="@font_main"
+               bg_color="@menu_bg_level_0" 
+               selected_color="@selected" 
+               unselected_color="@unselected" 
+               selection_bg_color="@selection_bg"
                padding="10" />
 
     <!-- Submenu (Panel next to sidebar) -->
     <container id="level_1" x="200" y="0" width="260" height="100%" 
                orientation="vertical" 
-               item_height="50" 
-               font_size="20"
-               bg_color="#333333DD" 
-               selected_color="#FFD700" 
-               unselected_color="#DDDDDD" 
+               item_height="@item_height_sub" 
+               font_size="@font_sub"
+               bg_color="@menu_bg_level_1" 
+               selected_color="@selected" 
+               unselected_color="@unselected_dim" 
+               selection_bg_color="@selection_bg"
                padding="10" />
 
     <!-- Options (Panel next to submenu) -->
     <container id="level_2" x="460" y="0" width="260" height="100%" 
                orientation="vertical" 
-               item_height="50" 
-               font_size="20"
-               bg_color="#444444CC" 
-               selected_color="#FFD700" 
-               unselected_color="#DDDDDD" 
+               item_height="@item_height_sub" 
+               font_size="@font_sub"
+               bg_color="@menu_bg_level_2" 
+               selected_color="@selected" 
+               unselected_color="@unselected_dim" 
+               selection_bg_color="@selection_bg"
                padding="10" />
 
     <!-- Stats (Bottom Bar) -->
     <container id="stats" x="0" y="88%" width="100%" height="12%" 
-               bg_color="#000000CC" 
-               font_size="18" 
-               color="#FFFFFF" />
+               bg_color="@stats_bg" 
+               font_size="@font_stats" 
+               color="@text_main" />
 </layout>

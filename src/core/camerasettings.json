@@ -18,6 +18,26 @@
         "dev": false,
         "cameramode": "manual"
     },
+    "theme": {
+        "colors": {
+            "menu_bg_level_0": "#000000EE",
+            "menu_bg_level_1": "#111111DD",
+            "menu_bg_level_2": "#222222CC",
+            "selected": "#00FFFF",
+            "unselected": "#FFFFFF",
+            "unselected_dim": "#DDDDDD",
+            "selection_bg": "#00444488",
+            "stats_bg": "#00000066",
+            "text_main": "#FFFFFF"
+        },
+        "sizes": {
+            "font_main": 24,
+            "font_sub": 20,
+            "font_stats": 18,
+            "item_height_main": 60,
+            "item_height_sub": 50
+        }
+    },
     "buttons": [
         {
             "name": "capture",

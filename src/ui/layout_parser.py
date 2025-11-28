@@ -3,8 +3,9 @@ from typing import Dict, Any, Optional
 import os
 
 class LayoutParser:
-    def __init__(self, layout_dir: str = "src/ui/layouts"):
+    def __init__(self, theme_config: Dict[str, Any] = None, layout_dir: str = "src/ui/layouts"):
         self.layout_dir = layout_dir
+        self.theme_config = theme_config or {}
         self.layouts: Dict[str, Any] = {}
         self.file_timestamps: Dict[str, float] = {}
         self.current_layout_name = "default"
@@ -51,8 +52,32 @@ class LayoutParser:
             
         for elem in root.iter():
             if elem.get('id') == element_id:
-                return elem.attrib
+                return self._resolve_variables(elem.attrib)
         return None
+
+    def _resolve_variables(self, attribs: Dict[str, str]) -> Dict[str, Any]:
+        """
+        Resolves variable references (starting with @) using the theme config.
+        """
+        resolved = {}
+        for key, value in attribs.items():
+            if isinstance(value, str) and value.startswith("@"):
+                var_name = value[1:]
+                # Search in colors and sizes
+                found = False
+                if "colors" in self.theme_config and var_name in self.theme_config["colors"]:
+                    resolved[key] = self.theme_config["colors"][var_name]
+                    found = True
+                elif "sizes" in self.theme_config and var_name in self.theme_config["sizes"]:
+                    resolved[key] = self.theme_config["sizes"][var_name]
+                    found = True
+                
+                if not found:
+                    print(f"Warning: Theme variable '{var_name}' not found.")
+                    resolved[key] = value # Keep original if not found
+            else:
+                resolved[key] = value
+        return resolved
 
     def check_for_updates(self):
         """Checks if the current layout file has changed and reloads it."""

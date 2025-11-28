@@ -21,9 +21,9 @@ class MenuController:
             elif event.key == pygame_mod.K_DOWN:
                 MenuController._handle_vertical_input(-1, menu_pos, menus, camera)
             elif event.key == pygame_mod.K_RIGHT:
-                MenuController._navigate(1, menu_pos)
+                MenuController._navigate(1, menu_pos, menus)
             elif event.key == pygame_mod.K_LEFT:
-                MenuController._navigate(-1, menu_pos)
+                MenuController._navigate(-1, menu_pos, menus)
 
             # Camera specific controls (e.g. Capture)
             if camera is not None:
@@ -47,14 +47,26 @@ class MenuController:
             MenuController._apply_setting(camera, changed_option)
 
     @staticmethod
-    def _navigate(direction: int, menu_pos: List[int]):
+    def _navigate(direction: int, menu_pos: List[int], menus: Dict[str, Any]):
         if direction > 0:
             # Go deeper
             if menu_pos[3] <= 1:
+                # If entering Level 2 (Value Selection), save the original value for reference
+                if menu_pos[3] == 1:
+                    try:
+                        option = menus["menus"][menu_pos[0]]["options"][menu_pos[1]]
+                        if "value" in option:
+                            option["_original_value"] = option["value"]
+                    except (KeyError, IndexError):
+                        pass
+                
                 menu_pos[3] += 1
         else:
             # Go back
             if menu_pos[3] >= 1:
+                # If leaving Level 2, we could clean up _original_value, but it's harmless to keep
+                # or we can keep it until next entry.
+                
                 menu_pos[menu_pos[3]] = 0 # Reset current level index
                 menu_pos[3] -= 1
 

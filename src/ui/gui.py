@@ -1,5 +1,6 @@
 import pygame
 import sys
+import os
 from typing import Dict, Any, List, Optional, Callable
 
 from src.ui.layout_parser import LayoutParser
@@ -31,7 +32,7 @@ class GUI:
         
         # Initialize Layout Parser
         try:
-            self.layout = LayoutParser()
+            self.layout = LayoutParser(theme_config=settings.get("theme", {}))
             print("Layout parser initialized")
         except Exception as e:
             print(f"Failed to initialize layout parser: {e}")
@@ -117,48 +118,73 @@ class GUI:
             if self.layout:
                 self.layout.load_layout(current_menu_name)
 
-        # Render Level 0 (Main Menu)
-        self._render_container("level_0", self.menus["menus"], self.menu_positions[0])
+        # Dynamic Layout Calculation
+        current_level = self.menu_positions[3]
+        x_cursor = 0
+        collapsed_width = 60 # Width for icon/collapsed state
 
-        # Render Level 1 (Submenu)
+        # --- Level 0 (Main Menu) ---
+        l0_collapsed = (current_level > 0)
+        l0_width = collapsed_width if l0_collapsed else 200
+        # Try to get width from layout if not collapsed
+        if not l0_collapsed and self.layout:
+            l0_container = self.layout.get_element_by_id("level_0")
+            if l0_container:
+                l0_width = self._parse_dimension(l0_container.get("width", "200"), self.width)
+
+        self._render_container("level_0", self.menus["menus"], self.menu_positions[0], 
+                               override_x=x_cursor, override_width=l0_width, collapsed=l0_collapsed)
+        x_cursor += l0_width
+
+        # --- Level 1 (Submenu) ---
         if 0 <= current_menu_index < len(self.menus["menus"]):
             submenu_items = self.menus["menus"][current_menu_index].get("options", [])
-            if self.menu_positions[3] > 0: # If level > 0
-                self._render_container("level_1", submenu_items, self.menu_positions[1])
+            
+            if current_level > 0:
+                l1_collapsed = (current_level > 1)
+                l1_width = collapsed_width if l1_collapsed else 260
+                if not l1_collapsed and self.layout:
+                    l1_container = self.layout.get_element_by_id("level_1")
+                    if l1_container:
+                        l1_width = self._parse_dimension(l1_container.get("width", "260"), self.width)
 
-            # Render Level 2 (Options/Values)
-            if self.menu_positions[3] > 1: # If level > 1
-                current_submenu_index = self.menu_positions[1]
-                if 0 <= current_submenu_index < len(submenu_items):
-                    option = submenu_items[current_submenu_index]
-                    # Construct a list for the value selector
-                    value_items = []
-                    if option["type"] == "list":
-                        value_items = []
-                        for opt in option["options"]:
-                            if isinstance(opt, dict):
-                                # New structure: opt is already a dict with displayname/value
-                                value_items.append(opt)
-                            else:
-                                # Old structure: opt is a value string/int
-                                value_items.append({"name": str(opt), "displayname": str(opt), "value": opt})
+                self._render_container("level_1", submenu_items, self.menu_positions[1],
+                                       override_x=x_cursor, override_width=l1_width, collapsed=l1_collapsed)
+                x_cursor += l1_width
+
+                # --- Level 2 (Options/Values) ---
+                if current_level > 1:
+                    current_submenu_index = self.menu_positions[1]
+                    if 0 <= current_submenu_index < len(submenu_items):
+                        option = submenu_items[current_submenu_index]
                         
-                        # Highlight the current selection (menu_positions[2])
-                        # But wait, menu_positions[2] is the index in the options list
-                        self._render_container("level_2", value_items, self.menu_positions[2])
-                    elif option["type"] == "range":
-                        # For range, just show the value
-                        # Pass min/max/step context for slider rendering
-                        value_items = [{
-                            "name": str(option["value"]), 
-                            "is_range": True,
-                            "value": option["value"],
-                            "min": option["options"]["min"],
-                            "max": option["options"]["max"]
-                        }]
-                        self._render_container("level_2", value_items, 0)
+                        # Get current value for "Old : New" display
+                        current_val = option.get("_original_value", option.get("value", None))
 
-    def _render_container(self, container_id: str, items: List[Dict[str, Any]], selected_index: int):
+                        value_items = []
+                        if option["type"] == "list":
+                            value_items = []
+                            for opt in option["options"]:
+                                if isinstance(opt, dict):
+                                    value_items.append(opt)
+                                else:
+                                    value_items.append({"name": str(opt), "displayname": str(opt), "value": opt})
+                            
+                            self._render_container("level_2", value_items, self.menu_positions[2],
+                                                   override_x=x_cursor, current_value=current_val)
+                        elif option["type"] == "range":
+                            value_items = [{
+                                "name": str(option["value"]), 
+                                "is_range": True,
+                                "value": option["value"],
+                                "min": option["options"]["min"],
+                                "max": option["options"]["max"]
+                            }]
+                            self._render_container("level_2", value_items, 0, override_x=x_cursor, current_value=current_val)
+
+    def _render_container(self, container_id: str, items: List[Dict[str, Any]], selected_index: int, 
+                          override_x: Optional[int] = None, override_width: Optional[int] = None, 
+                          collapsed: bool = False, current_value: Any = None):
         if not self.layout:
             return
 
@@ -172,9 +198,14 @@ class GUI:
         w = self._parse_dimension(container.get("width", "100"), self.width)
         h = self._parse_dimension(container.get("height", "100"), self.height)
         
+        # Apply overrides
+        if override_x is not None: x = override_x
+        if override_width is not None: w = override_width
+        
         bg_color = self._parse_color(container.get("bg_color", "#00000000"))
         selected_color = self._parse_color(container.get("selected_color", "#FFFFFF"))
         unselected_color = self._parse_color(container.get("unselected_color", "#AAAAAA"))
+        selection_bg_color = self._parse_color(container.get("selection_bg_color", "#FFFFFF33"))
         
         font_size = int(container.get("font_size", "20"))
         item_height = int(container.get("item_height", "30"))
@@ -184,21 +215,17 @@ class GUI:
         # Draw background
         pygame.draw.rect(self.layer, bg_color, (x, y, w, h))
 
-        # Setup font (Use cached font if possible, or create new one)
-        # Creating a new font every frame is expensive and can cause issues
-        # Ideally we should cache these in __init__ or a resource manager
-        # For now, let's use self.font if size matches, or create a temporary one
+        # Setup font
         if font_size == self.settings["display"]["fontsize"]:
             font = self.font
         else:
-            # Simple cache for other sizes could be added here
             font = pygame.font.Font('freesansbold.ttf', font_size)
 
         # Draw items
         current_x = x + padding
         current_y = y + padding
         
-        # Define clipping rect for the container to handle scrolling text
+        # Define clipping rect
         container_rect = pygame.Rect(x, y, w, h)
         self.layer.set_clip(container_rect)
 
@@ -209,76 +236,136 @@ class GUI:
             # Draw Selection Box
             if is_selected and orientation == "vertical":
                 selection_rect = pygame.Rect(x, current_y + (i * item_height), w, item_height)
-                # Draw a semi-transparent box or inverted color box
-                # Using a slightly lighter background for selection
-                pygame.draw.rect(self.layer, (255, 255, 255, 50), selection_rect)
-                # Optional: Draw a border
-                pygame.draw.rect(self.layer, selected_color, selection_rect, 1)
+                pygame.draw.rect(self.layer, selection_bg_color, selection_rect)
+                # pygame.draw.rect(self.layer, selected_color, selection_rect, 1)
 
             # Prepare Text
-            name_text = str(item.get("displayname", item.get("name", ""))).upper()
+            display_name = str(item.get("displayname", item.get("name", ""))).title()
             
-            # Append Value if available (for Level 1 items usually)
-            if "value" in item:
-                val = str(item["value"])
-                # Truncate if too long
-                if len(val) > 10: val = val[:8] + ".."
-                name_text += f" : {val}"
+            if collapsed:
+                # Collapsed Mode: Try to load icon, fallback to first letter
+                icon_loaded = False
+                
+                # Determine icon filename from item name
+                # Normalize: lowercase, replace spaces with underscores
+                raw_name = str(item.get("name", "")).lower().replace(" ", "_")
+                
+                # Icon Aliases
+                icon_aliases = {
+                    "exposurecomp": "exposure"
+                }
+                if raw_name in icon_aliases:
+                    raw_name = icon_aliases[raw_name]
 
-            text_surf = font.render(name_text, True, color)
-            text_rect = text_surf.get_rect()
-            
-            # Position text
-            if orientation == "vertical":
-                dest_y = current_y + (i * item_height)
-                # Center vertically in the item slot
-                dest_y += (item_height - text_rect.height) // 2
+                icon_path = f"src/ui/icons/{raw_name}.svg"
                 
-                # Handle Scrolling for overflow
-                max_width = w - (padding * 2) - 25 # -25 for chevron space
-                overflow = text_rect.width - max_width
-                
-                if overflow > 0 and is_selected:
-                    # Scroll Logic: Pause Start -> Scroll -> Pause End -> Reset
-                    scroll_speed = 0.05 # pixels per ms
-                    pause_time = 1000 # ms
-                    
-                    # Calculate total cycle time
-                    scroll_time = overflow / scroll_speed
-                    total_cycle_time = scroll_time + (pause_time * 2)
-                    
-                    current_time = pygame.time.get_ticks() % total_cycle_time
-                    
-                    offset = 0
-                    if current_time < pause_time:
-                        # Pause at start
-                        offset = 0
-                    elif current_time < (pause_time + scroll_time):
-                        # Scrolling
-                        offset = (current_time - pause_time) * scroll_speed
-                    else:
-                        # Pause at end (before snap back)
-                        offset = overflow
+                if os.path.exists(icon_path):
+                    try:
+                        icon = pygame.image.load(icon_path)
+                        # Scale icon to fit within item_height (with some padding)
+                        icon_size = int(item_height * 0.7)
+                        icon = pygame.transform.scale(icon, (icon_size, icon_size))
                         
-                    draw_x = current_x - offset
+                        # Center icon
+                        icon_rect = icon.get_rect(center=(x + w//2, current_y + (i * item_height) + item_height//2))
+                        self.layer.blit(icon, icon_rect)
+                        icon_loaded = True
+                    except Exception as e:
+                        print(f"Failed to load icon {icon_path}: {e}")
+                
+                if not icon_loaded:
+                    short_name = display_name[0] if display_name else "?"
+                    text_surf = font.render(short_name, True, color)
+                    text_rect = text_surf.get_rect(center=(x + w//2, current_y + (i * item_height) + item_height//2))
+                    self.layer.blit(text_surf, text_rect)
+            else:
+                # Normal Mode
+                
+                # Try to load icon for normal mode too
+                icon_width = 0
+                raw_name = str(item.get("name", "")).lower().replace(" ", "_")
+                
+                # Icon Aliases
+                icon_aliases = {
+                    "exposurecomp": "exposure"
+                }
+                if raw_name in icon_aliases:
+                    raw_name = icon_aliases[raw_name]
+
+                icon_path = f"src/ui/icons/{raw_name}.svg"
+                if os.path.exists(icon_path):
+                    try:
+                        icon = pygame.image.load(icon_path)
+                        icon_size = int(item_height * 0.6)
+                        icon = pygame.transform.scale(icon, (icon_size, icon_size))
+                        
+                        # Position icon to the left of text
+                        icon_y = current_y + (i * item_height) + (item_height - icon_size) // 2
+                        self.layer.blit(icon, (current_x, icon_y))
+                        icon_width = icon_size + 10 # Add spacing
+                    except Exception:
+                        pass
+
+                name_text = display_name
+
+                # Handle Level 2 Logic
+                if container_id == "level_2":
+                    if item.get("is_range"):
+                         # Slider: Old : New
+                         candidate_val = str(item.get("value", ""))
+                         if current_value is not None:
+                             name_text = f"{current_value} : {candidate_val}"
+                         else:
+                             name_text = candidate_val
+                    else:
+                         # List: Asterisk for old value
+                         # Check if this item's value matches current_value
+                         # item["value"] might be int or string, current_value same.
+                         if current_value is not None and str(item.get("value")) == str(current_value):
+                             name_text += " *"
+
+                text_surf = font.render(name_text, True, color)
+                text_rect = text_surf.get_rect()
+                
+                # Position text
+                if orientation == "vertical":
+                    dest_y = current_y + (i * item_height)
+                    dest_y += (item_height - text_rect.height) // 2
                     
-                    self.layer.blit(text_surf, (draw_x, dest_y))
-                else:
-                    self.layer.blit(text_surf, (current_x, dest_y))
+                    # Handle Scrolling
+                    max_width = w - (padding * 2) - 25 - icon_width
+                    overflow = text_rect.width - max_width
+                    
+                    draw_x = current_x + icon_width
+                    
+                    if overflow > 0 and is_selected:
+                        scroll_speed = 0.05
+                        pause_time = 1000
+                        scroll_time = overflow / scroll_speed
+                        total_cycle_time = scroll_time + (pause_time * 2)
+                        current_time = pygame.time.get_ticks() % total_cycle_time
+                        
+                        offset = 0
+                        if current_time < pause_time: offset = 0
+                        elif current_time < (pause_time + scroll_time): offset = (current_time - pause_time) * scroll_speed
+                        else: offset = overflow
+                            
+                        draw_x -= offset
+                        self.layer.blit(text_surf, (draw_x, dest_y))
+                    else:
+                        self.layer.blit(text_surf, (draw_x, dest_y))
 
-                # Draw Chevron if item has sub-options (Draw AFTER text for Z-order)
-                if "options" in item:
-                    chevron_surf = font.render(">", True, color)
-                    chevron_rect = chevron_surf.get_rect(midright=(x + w - 10, dest_y + text_rect.height // 2))
-                    # Draw a small background behind chevron to ensure legibility if text scrolls under
-                    chevron_bg_rect = chevron_rect.inflate(5, 5)
-                    pygame.draw.rect(self.layer, bg_color, chevron_bg_rect) # Use container bg color
-                    self.layer.blit(chevron_surf, chevron_rect)
+                    # Draw Chevron
+                    if "options" in item:
+                        chevron_surf = font.render(">", True, color)
+                        chevron_rect = chevron_surf.get_rect(midright=(x + w - 10, dest_y + text_rect.height // 2))
+                        chevron_bg_rect = chevron_rect.inflate(5, 5)
+                        pygame.draw.rect(self.layer, bg_color, chevron_bg_rect)
+                        self.layer.blit(chevron_surf, chevron_rect)
 
-            else: # horizontal
-                # Simple horizontal layout
-                self.layer.blit(text_surf, (current_x, current_y))
-                current_x += text_rect.width + int(container.get("item_spacing", "20"))
+                else: # horizontal
+                    self.layer.blit(text_surf, (current_x, current_y))
+                    current_x += text_rect.width + int(container.get("item_spacing", "20"))
         
         # Reset clip
         self.layer.set_clip(None)
@@ -292,14 +379,12 @@ class GUI:
             
             # Draw Slider Bar
             bar_x = x + padding
-            bar_y = y + padding + item_height + 10 # Below the text
+            bar_y = y + padding + item_height + 10
             bar_w = w - (padding * 2)
             bar_h = 10
             
-            # Background track
             pygame.draw.rect(self.layer, unselected_color, (bar_x, bar_y, bar_w, bar_h))
             
-            # Calculate handle position
             if max_val > min_val:
                 pct = (val - min_val) / (max_val - min_val)
             else:
@@ -308,8 +393,15 @@ class GUI:
             handle_w = 20
             handle_x = bar_x + (pct * (bar_w - handle_w))
             
-            # Handle
             pygame.draw.rect(self.layer, selected_color, (handle_x, bar_y - 5, handle_w, bar_h + 10))
+
+            # Draw Min/Max
+            min_surf = font.render(str(min_val), True, unselected_color)
+            max_surf = font.render(str(max_val), True, unselected_color)
+            
+            # Position Min/Max below slider
+            self.layer.blit(min_surf, (bar_x, bar_y + 20))
+            self.layer.blit(max_surf, (bar_x + bar_w - max_surf.get_width(), bar_y + 20))
 
     def _parse_dimension(self, value: str, total_size: int) -> int:
         value = str(value)
