@@ -3,7 +3,7 @@ from typing import Dict, Any, List, Optional
 
 class MenuController:
     @staticmethod
-    def handle_event(pygame_mod, event, menu_pos: List[int], menus: Dict[str, Any], camera: Optional[Any] = None):
+    def handle_event(pygame_mod, event, menu_pos: List[int], menus: Dict[str, Any], camera: Optional[Any] = None, menu_active: bool = True):
         """
         Handles input events for menu navigation and value updates.
         menu_pos: [menu_index, submenu_index, option_index, level]
@@ -16,14 +16,15 @@ class MenuController:
                 return
 
             # Navigation / Value Change
-            if event.key == pygame_mod.K_UP:
-                MenuController._handle_vertical_input(1, menu_pos, menus, camera)
-            elif event.key == pygame_mod.K_DOWN:
-                MenuController._handle_vertical_input(-1, menu_pos, menus, camera)
-            elif event.key == pygame_mod.K_RIGHT:
-                MenuController._navigate(1, menu_pos, menus)
-            elif event.key == pygame_mod.K_LEFT:
-                MenuController._navigate(-1, menu_pos, menus)
+            if menu_active:
+                if event.key == pygame_mod.K_UP:
+                    MenuController._handle_vertical_input(1, menu_pos, menus, camera)
+                elif event.key == pygame_mod.K_DOWN:
+                    MenuController._handle_vertical_input(-1, menu_pos, menus, camera)
+                elif event.key == pygame_mod.K_RIGHT:
+                    MenuController._navigate(1, menu_pos, menus)
+                elif event.key == pygame_mod.K_LEFT:
+                    MenuController._navigate(-1, menu_pos, menus)
 
             # Camera specific controls (e.g. Capture)
             if camera is not None:

@@ -25,6 +25,13 @@ class GUI:
         self.stats_font = pygame.font.Font('freesansbold.ttf', 10)
         self.clock = pygame.time.Clock()
         
+        # Animation State
+        self.last_level = 0
+        self.transition_start = 0
+        self.transition_from = 0
+        self.transition_to = 0
+        self.transition_duration = self.settings["display"].get("animation_duration", 250) # ms
+        
         # Enable key repeat for fast scrolling (delay=300ms, interval=50ms)
         pygame.key.set_repeat(300, 50)
         
@@ -89,7 +96,15 @@ class GUI:
                     continue # Consume event to prevent capture/other actions
 
                 # Pass event to controls
-                controls_callback(pygame, event, self.menu_positions, self.menus, camera=self.camera)
+                controls_callback(pygame, event, self.menu_positions, self.menus, camera=self.camera, menu_active=self.settings["display"]["showmenu"])
+
+            # Detect Level Change for Animation
+            current_level = self.menu_positions[3]
+            if current_level != self.last_level:
+                self.transition_from = self.last_level
+                self.transition_to = current_level
+                self.transition_start = pygame.time.get_ticks()
+                self.last_level = current_level
 
             # Render Menu
             if self.settings["display"]["showmenu"]:
@@ -118,20 +133,58 @@ class GUI:
             if self.layout:
                 self.layout.load_layout(current_menu_name)
 
-        # Dynamic Layout Calculation
+        # Dynamic Layout Calculation with Animation
         current_level = self.menu_positions[3]
+        
+        # Calculate Animation Progress
+        now = pygame.time.get_ticks()
+        if now - self.transition_start < self.transition_duration:
+            t = (now - self.transition_start) / self.transition_duration
+            # Simple ease-out
+            t = 1 - (1 - t) * (1 - t)
+        else:
+            t = 1.0
+
+        # Helper to get target width for a column at a specific level state
+        def get_target_width(col_idx, level_state):
+            collapsed_width = 60
+            # Level 0 (Main Menu)
+            if col_idx == 0:
+                # Collapses if level > 0
+                return collapsed_width if level_state > 0 else 200
+            # Level 1 (Submenu)
+            elif col_idx == 1:
+                # Hidden if level < 1
+                if level_state < 1: return 0
+                # Collapses if level > 1
+                return collapsed_width if level_state > 1 else 260
+            # Level 2 (Options)
+            elif col_idx == 2:
+                # Hidden if level < 2
+                if level_state < 2: return 0
+                return 260
+            return 0
+
+        # Interpolate Widths
+        w0_start = get_target_width(0, self.transition_from)
+        w0_end = get_target_width(0, self.transition_to)
+        l0_width = int(w0_start + (w0_end - w0_start) * t)
+
+        w1_start = get_target_width(1, self.transition_from)
+        w1_end = get_target_width(1, self.transition_to)
+        l1_width = int(w1_start + (w1_end - w1_start) * t)
+        
+        # Determine collapsed state for rendering content
+        # We use the target state (current_level) to decide content mode immediately
+        l0_collapsed = (current_level > 0)
+        l1_collapsed = (current_level > 1)
+
         x_cursor = 0
-        collapsed_width = 60 # Width for icon/collapsed state
 
         # --- Level 0 (Main Menu) ---
-        l0_collapsed = (current_level > 0)
-        l0_width = collapsed_width if l0_collapsed else 200
-        # Try to get width from layout if not collapsed
-        if not l0_collapsed and self.layout:
-            l0_container = self.layout.get_element_by_id("level_0")
-            if l0_container:
-                l0_width = self._parse_dimension(l0_container.get("width", "200"), self.width)
-
+        # Try to get width from layout if not collapsed (for target calculation reference)
+        # But for animation we use our calculated l0_width
+        
         self._render_container("level_0", self.menus["menus"], self.menu_positions[0], 
                                override_x=x_cursor, override_width=l0_width, collapsed=l0_collapsed)
         x_cursor += l0_width
@@ -140,20 +193,21 @@ class GUI:
         if 0 <= current_menu_index < len(self.menus["menus"]):
             submenu_items = self.menus["menus"][current_menu_index].get("options", [])
             
-            if current_level > 0:
-                l1_collapsed = (current_level > 1)
-                l1_width = collapsed_width if l1_collapsed else 260
-                if not l1_collapsed and self.layout:
-                    l1_container = self.layout.get_element_by_id("level_1")
-                    if l1_container:
-                        l1_width = self._parse_dimension(l1_container.get("width", "260"), self.width)
-
+            # Only render if width > 0
+            if l1_width > 0:
                 self._render_container("level_1", submenu_items, self.menu_positions[1],
                                        override_x=x_cursor, override_width=l1_width, collapsed=l1_collapsed)
                 x_cursor += l1_width
 
                 # --- Level 2 (Options/Values) ---
-                if current_level > 1:
+                # Level 2 width is just remaining space or standard?
+                # We didn't animate Level 2 width explicitly in previous code, it just appeared.
+                # Let's animate it too.
+                w2_start = get_target_width(2, self.transition_from)
+                w2_end = get_target_width(2, self.transition_to)
+                l2_width = int(w2_start + (w2_end - w2_start) * t)
+
+                if l2_width > 0:
                     current_submenu_index = self.menu_positions[1]
                     if 0 <= current_submenu_index < len(submenu_items):
                         option = submenu_items[current_submenu_index]
@@ -171,7 +225,7 @@ class GUI:
                                     value_items.append({"name": str(opt), "displayname": str(opt), "value": opt})
                             
                             self._render_container("level_2", value_items, self.menu_positions[2],
-                                                   override_x=x_cursor, current_value=current_val)
+                                                   override_x=x_cursor, override_width=l2_width, current_value=current_val)
                         elif option["type"] == "range":
                             value_items = [{
                                 "name": str(option["value"]), 
@@ -180,7 +234,7 @@ class GUI:
                                 "min": option["options"]["min"],
                                 "max": option["options"]["max"]
                             }]
-                            self._render_container("level_2", value_items, 0, override_x=x_cursor, current_value=current_val)
+                            self._render_container("level_2", value_items, 0, override_x=x_cursor, override_width=l2_width, current_value=current_val)
 
     def _render_container(self, container_id: str, items: List[Dict[str, Any]], selected_index: int, 
                           override_x: Optional[int] = None, override_width: Optional[int] = None, 

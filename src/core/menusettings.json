@@ -300,7 +300,8 @@
                             "displayname": "3000 x 3000"
                         }
                     ],
-                    "value": "2000,2000"
+                    "value": "4056,3040",
+                    "_original_value": "4056,3040"
                 },
                 {
                     "name": "dynamicRangeCompression",
@@ -340,7 +341,8 @@
                             "displayname": "Off"
                         }
                     ],
-                    "value": false
+                    "value": true,
+                    "_original_value": true
                 },
                 {
                     "name": "sharpness",
@@ -362,7 +364,8 @@
                         "max": 100,
                         "step": 20
                     },
-                    "value": 40
+                    "value": -100,
+                    "_original_value": 40
                 },
                 {
                     "name": "brightness",

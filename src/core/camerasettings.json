@@ -6,8 +6,9 @@
         "refreshrate": 30,
         "fontsize": 32,
         "padding": 10,
-        "showmenu": true,
-        "fullscreen": false
+        "showmenu": false,
+        "fullscreen": false,
+        "animation_duration": 100
     },
     "files": {
         "template": "{}_picamera_{}",
