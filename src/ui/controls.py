@@ -3,7 +3,7 @@ from typing import Dict, Any, List, Optional
 
 class MenuController:
     @staticmethod
-    def handle_event(pygame_mod, event, menu_pos: List[int], menus: Dict[str, Any], camera: Optional[Any] = None, menu_active: bool = True, quick_menu_pos: Optional[List[int]] = None):
+    def handle_event(pygame_mod, event, menu_pos: List[int], menus: Dict[str, Any], camera: Optional[Any] = None, menu_active: bool = True, quick_menu_pos: Optional[List[int]] = None, callbacks: Optional[Dict[str, Any]] = None):
         """
         Handles input events for menu navigation and value updates.
         menu_pos: [menu_index, submenu_index, option_index, level]
@@ -18,9 +18,9 @@ class MenuController:
             # Navigation / Value Change
             if menu_active:
                 if event.key == pygame_mod.K_UP:
-                    MenuController._handle_vertical_input(1, menu_pos, menus, camera)
+                    MenuController._handle_vertical_input(1, menu_pos, menus, camera, callbacks)
                 elif event.key == pygame_mod.K_DOWN:
-                    MenuController._handle_vertical_input(-1, menu_pos, menus, camera)
+                    MenuController._handle_vertical_input(-1, menu_pos, menus, camera, callbacks)
                 elif event.key == pygame_mod.K_RIGHT:
                     MenuController._navigate(1, menu_pos, menus)
                 elif event.key == pygame_mod.K_LEFT:
@@ -48,7 +48,7 @@ class MenuController:
                     camera.controls(pygame_mod, event.key)
 
     @staticmethod
-    def _handle_vertical_input(direction: int, menu_pos: List[int], menus: Dict[str, Any], camera: Optional[Any]):
+    def _handle_vertical_input(direction: int, menu_pos: List[int], menus: Dict[str, Any], camera: Optional[Any], callbacks: Optional[Dict[str, Any]] = None):
         option_type = MenuController._get_option_type(menu_pos, menus)
         
         changed_option = None
@@ -58,8 +58,8 @@ class MenuController:
         elif option_type == "range":
             changed_option = MenuController._update_range_value(direction, menu_pos, menus)
 
-        if changed_option and camera:
-            MenuController._apply_setting(camera, changed_option)
+        if changed_option:
+            MenuController._apply_setting(camera, changed_option, callbacks)
 
     @staticmethod
     def _navigate(direction: int, menu_pos: List[int], menus: Dict[str, Any]):
@@ -240,11 +240,21 @@ class MenuController:
                     MenuController._apply_setting(camera, option)
 
     @staticmethod
-    def _apply_setting(camera: Any, option: Dict[str, Any]):
-        directory = camera.directory()
+    def _apply_setting(camera: Any, option: Dict[str, Any], callbacks: Optional[Dict[str, Any]] = None):
         name = option["name"]
         value = option["value"]
         
-        if name in directory:
-            print(f"Applying setting: {name} = {value}")
-            directory[name](value=value)
+        # Handle Reset Action
+        if name == "reset_settings" and value == "yes":
+            if callbacks and "reset" in callbacks:
+                print("Resetting settings...")
+                callbacks["reset"]()
+                # Reset the option value back to "no" so it doesn't stay on "yes"
+                option["value"] = "no"
+            return
+
+        if camera:
+            directory = camera.directory()
+            if name in directory:
+                print(f"Applying setting: {name} = {value}")
+                directory[name](value=value)

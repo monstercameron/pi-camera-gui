@@ -39,6 +39,26 @@ def populate_menu_options(menus, camera):
                             if supported_options:
                                 option["value"] = supported_options[0]
 
+def apply_settings_to_camera(menus, camera):
+    """
+    Applies all settings from the menu structure to the camera.
+    """
+    directory = camera.directory()
+    print("Applying initial settings to camera...")
+    
+    for menu in menus["menus"]:
+        if "options" in menu:
+            for option in menu["options"]:
+                key = option.get("name")
+                value = option.get("value")
+                
+                if key and value is not None and key in directory:
+                    try:
+                        # print(f"  Setting {key} -> {value}")
+                        directory[key](value=value)
+                    except Exception as e:
+                        print(f"  Failed to set {key}: {e}")
+
 if __name__ == '__main__':
     # Initialize settings manager
     settings_manager = SettingsManager()
@@ -50,13 +70,25 @@ if __name__ == '__main__':
     # Auto-discover options
     populate_menu_options(menus, camera)
     
+    # Apply loaded settings to camera
+    apply_settings_to_camera(menus, camera)
+    
     # Initialize GUI
     gui = GUI(settings, menus, camera)
+    
+    # Define callbacks
+    callbacks = {
+        "reset": lambda: settings_manager.reset()
+    }
+
+    # Wrap handle_event to include callbacks
+    def controls_handler(pygame_mod, event, menu_pos, menus, camera=None, menu_active=True, quick_menu_pos=None):
+        MenuController.handle_event(pygame_mod, event, menu_pos, menus, camera, menu_active, quick_menu_pos, callbacks)
     
     try:
         print("Starting GUI...")
         # Run the GUI
-        gui.run(MenuController.handle_event, Buttons)
+        gui.run(controls_handler, Buttons)
         print("GUI exited normally.")
     except KeyboardInterrupt:
         print("GUI interrupted by user.")

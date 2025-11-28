@@ -353,7 +353,7 @@
                         }
                     ],
                     "value": "png",
-                    "_original_value": "jpeg"
+                    "_original_value": "png"
                 },
                 {
                     "name": "quality",
@@ -453,6 +453,29 @@
                         "step": 25
                     },
                     "value": 0
+                }
+            ]
+        },
+        {
+            "name": "system",
+            "displayname": "System",
+            "type": "list",
+            "options": [
+                {
+                    "name": "reset_settings",
+                    "displayname": "Reset Settings",
+                    "type": "list",
+                    "options": [
+                        {
+                            "value": "no",
+                            "displayname": "Cancel"
+                        },
+                        {
+                            "value": "yes",
+                            "displayname": "Confirm Reset"
+                        }
+                    ],
+                    "value": "no"
                 }
             ]
         }

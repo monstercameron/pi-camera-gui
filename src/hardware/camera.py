@@ -26,6 +26,107 @@ try:
 except ImportError:
     Image = None
 
+def generate_exif_bytes(metadata=None):
+    """Generates EXIF bytes with rich metadata."""
+    if not Image:
+        return None
+    
+    try:
+        # Create a dummy image to generate EXIF structure
+        # We can't just create bytes directly easily without using Pillow's machinery
+        # or we can use a minimal image.
+        img = Image.new('RGB', (1, 1))
+        exif = img.getexif()
+        
+        # Standard EXIF
+        exif[0x010f] = "Raspberry Pi"             # Make
+        exif[0x0110] = "PiCamera"                 # Model
+        exif[0x0131] = "PiCameraGUI"              # Software
+        exif[0x013b] = "PiCamera User"            # Artist
+        exif[0x8298] = "Copyright (c) 2025"       # Copyright
+        exif[0x010e] = "Captured with PiCameraGUI" # ImageDescription
+        
+        # DateTime
+        dt_str = datetime.now().strftime("%Y:%m:%d %H:%M:%S")
+        exif[0x9003] = dt_str                     # DateTimeOriginal
+        exif[0x9004] = dt_str                     # DateTimeDigitized
+        exif[0x0132] = dt_str                     # DateTime
+
+        # Camera Tech Specs (Static/Mock for now)
+        exif[0xA405] = 35                         # FocalLengthIn35mmFilm
+        exif[0x829D] = (28, 10)                   # FNumber (f/2.8)
+        exif[0x920A] = (304, 100)                 # FocalLength (3.04mm)
+        exif[0x9205] = (28, 10)                   # MaxApertureValue (f/2.8)
+        exif[0x9207] = 5                          # MeteringMode (Pattern)
+        exif[0x9209] = 0                          # Flash (No Flash)
+        
+        # Extended Tech Specs
+        exif[0x920B] = (100, 1)                   # FlashEnergy
+        exif[0xA433] = "Raspberry Pi"             # LensMake
+        exif[0xA434] = "PiCamera Module v2"       # LensModel
+        exif[0xA431] = "0000000000"               # BodySerialNumber
+        exif[0x9000] = b"0232"                    # ExifVersion
+        exif[0xA404] = (0, 1)                     # DigitalZoomRatio
+        exif[0x0106] = 2                          # PhotometricInterpretation (RGB)
+        
+        # Dynamic/Default Settings
+        exif[0xA408] = 0                          # Contrast (Normal)
+        exif[0x9203] = (50, 100)                  # BrightnessValue
+        exif[0x9208] = 0                          # LightSource (Unknown)
+        exif[0x8822] = 2                          # ExposureProgram (Normal)
+        exif[0xA409] = 0                          # Saturation (Normal)
+        exif[0xA40A] = 0                          # Sharpness (Normal)
+        exif[0xA403] = 0                          # WhiteBalance (Auto)
+
+        # Windows XP Tags (UCS-2 encoded)
+        def encode_xp(text):
+            return text.encode('utf-16le') + b'\x00\x00'
+
+        exif[0x9c9b] = encode_xp("PiCamera Capture")      # XPTitle
+        exif[0x9c9c] = encode_xp("Created with PiCameraGUI") # XPComment
+        exif[0x9c9d] = encode_xp("PiCamera User")         # XPAuthor
+        exif[0x9c9e] = encode_xp("picamera;gui;python")   # XPKeywords
+        exif[0x9c9f] = encode_xp("Photography")           # XPSubject
+
+        if metadata:
+            if 'iso' in metadata:
+                # 0x8827: ISO
+                exif[0x8827] = int(metadata['iso'])
+            
+            if 'shutter_speed' in metadata:
+                # 0x829a: ExposureTime (Rational)
+                # Shutter speed is in microseconds
+                ss = int(metadata['shutter_speed'])
+                if ss > 0:
+                    # Convert to seconds fraction (approx)
+                    exif[0x829a] = (ss, 1000000)
+
+        return exif.tobytes()
+    except Exception as e:
+        print(f"Error generating EXIF: {e}")
+        return None
+
+def add_exif_to_file_task(file_name, metadata=None):
+    """Adds rich EXIF metadata to an existing image file."""
+    try:
+        if Image:
+            print(f"Adding EXIF to: {file_name}")
+            img = Image.open(file_name)
+            exif_bytes = generate_exif_bytes(metadata)
+            
+            if exif_bytes:
+                # We must save the image to write the EXIF.
+                # This might re-encode JPEGs.
+                # To minimize loss, we can try to use the same quality if known, or high quality.
+                # But Pillow doesn't easily let us 'copy' the compressed stream with new headers.
+                # For now, we accept re-encoding as the cost of rich metadata on RPi without complex libraries.
+                img.save(file_name, exif=exif_bytes, quality=95) 
+                print(f"EXIF added to: {file_name}")
+        else:
+            print("Pillow not installed, cannot add EXIF.")
+    except Exception as e:
+        print(f"Error adding EXIF to file: {e}")
+
 def software_encode_task(file_name, data, resolution, fmt, quality, metadata=None):
     try:
         if Image:
@@ -46,75 +147,11 @@ def software_encode_task(file_name, data, resolution, fmt, quality, metadata=Non
                 params['compress_level'] = 6 # Default
             
             # Add Metadata (EXIF)
-            if metadata or True: # Always add basic metadata
-                try:
-                    exif = img.getexif()
-                    # Standard EXIF
-                    exif[0x010f] = "Raspberry Pi"             # Make
-                    exif[0x0110] = "PiCamera"                 # Model
-                    exif[0x0131] = "PiCameraGUI"              # Software
-                    exif[0x013b] = "PiCamera User"            # Artist
-                    exif[0x8298] = "Copyright (c) 2025"       # Copyright
-                    exif[0x010e] = "Captured with PiCameraGUI" # ImageDescription
-                    
-                    # DateTime
-                    dt_str = datetime.now().strftime("%Y:%m:%d %H:%M:%S")
-                    exif[0x9003] = dt_str                     # DateTimeOriginal
-                    exif[0x9004] = dt_str                     # DateTimeDigitized
-                    exif[0x0132] = dt_str                     # DateTime
-
-                    # Camera Tech Specs (Static/Mock for now)
-                    exif[0xA405] = 35                         # FocalLengthIn35mmFilm
-                    exif[0x829D] = (28, 10)                   # FNumber (f/2.8)
-                    exif[0x920A] = (304, 100)                 # FocalLength (3.04mm)
-                    exif[0x9205] = (28, 10)                   # MaxApertureValue (f/2.8)
-                    exif[0x9207] = 5                          # MeteringMode (Pattern)
-                    exif[0x9209] = 0                          # Flash (No Flash)
-                    
-                    # Extended Tech Specs
-                    exif[0x920B] = (100, 1)                   # FlashEnergy
-                    exif[0xA433] = "Raspberry Pi"             # LensMake
-                    exif[0xA434] = "PiCamera Module v2"       # LensModel
-                    exif[0xA431] = "0000000000"               # BodySerialNumber
-                    exif[0x9000] = b"0232"                    # ExifVersion
-                    exif[0xA404] = (0, 1)                     # DigitalZoomRatio
-                    exif[0x0106] = 2                          # PhotometricInterpretation (RGB)
-                    
-                    # Dynamic/Default Settings
-                    exif[0xA408] = 0                          # Contrast (Normal)
-                    exif[0x9203] = (50, 100)                  # BrightnessValue
-                    exif[0x9208] = 0                          # LightSource (Unknown)
-                    exif[0x8822] = 2                          # ExposureProgram (Normal)
-                    exif[0xA409] = 0                          # Saturation (Normal)
-                    exif[0xA40A] = 0                          # Sharpness (Normal)
-                    exif[0xA403] = 0                          # WhiteBalance (Auto)
-
-                    # Windows XP Tags (UCS-2 encoded)
-                    def encode_xp(text):
-                        return text.encode('utf-16le') + b'\x00\x00'
-
-                    exif[0x9c9b] = encode_xp("PiCamera Capture")      # XPTitle
-                    exif[0x9c9c] = encode_xp("Created with PiCameraGUI") # XPComment
-                    exif[0x9c9d] = encode_xp("PiCamera User")         # XPAuthor
-                    exif[0x9c9e] = encode_xp("picamera;gui;python")   # XPKeywords
-                    exif[0x9c9f] = encode_xp("Photography")           # XPSubject
-
-                    if metadata:
-                        if 'iso' in metadata:
-                            # 0x8827: ISO
-                            exif[0x8827] = int(metadata['iso'])
-                        
-                        if 'shutter_speed' in metadata:
-                            # 0x829a: ExposureTime (Rational)
-                            # Shutter speed is in microseconds
-                            ss = int(metadata['shutter_speed'])
-                            if ss > 0:
-                                # Convert to seconds fraction (approx)
-                                exif[0x829a] = (ss, 1000000)
-
-                    params['exif'] = exif.tobytes()
-                except Exception as e:
-                    print(f"Error adding EXIF: {e}")
+            # Pillow supports EXIF for JPEG, PNG, WebP, TIFF
+            if pil_fmt in ['JPEG', 'PNG', 'WEBP', 'TIFF']:
+                exif_bytes = generate_exif_bytes(metadata)
+                if exif_bytes:
+                    params['exif'] = exif_bytes
 
             img.save(file_name, format=pil_fmt, **params)
             print(f"Software encode success: {file_name}")
@@ -209,6 +246,32 @@ class CameraBase(ABC):
             return str(int((free // (1024 * 1024)) / est_mb))
         except Exception:
             return "0"
+
+    def _get_next_filename(self, extension):
+        date_and_time = datetime.now().strftime('%Y-%m-%d')
+        file_number = 1
+        file_path = self.settings["files"]["path"]
+        template = self.settings["files"]["template"]
+        
+        # List of extensions to check for continuity
+        checked_extensions = ['jpg', 'jpeg', 'png', 'bmp', 'gif', 'webp']
+        
+        while True:
+            # Check if this file number exists with ANY extension
+            exists = False
+            for ext in checked_extensions:
+                check_name = f'{file_path}/{template.format(date_and_time, str(file_number))}.{ext}'
+                if path.exists(check_name):
+                    exists = True
+                    break
+            
+            if exists:
+                file_number += 1
+            else:
+                # Found a free number
+                break
+                
+        return f'{file_path}/{template.format(date_and_time, str(file_number))}.{extension}'
 
     def set_image_format(self, value=None):
         if value is not None:
@@ -406,6 +469,15 @@ class RealCamera(CameraBase):
                 # PiCamera quality is 1-100
                 self.camera.capture(file_name, format='jpeg', quality=quality)
                 print('Camera capture success:' + file_name)
+                
+                # Post-process to add rich EXIF metadata
+                metadata = {
+                    'iso': self.iso(),
+                    'shutter_speed': self.shutter_speed(),
+                    'awb': self.white_balance(),
+                    'exposure': self.exposure()
+                }
+                self.encoder_pool.submit(add_exif_to_file_task, file_name, metadata)
             else:
                 # Capture to stream (RGB)
                 import io
@@ -437,20 +509,11 @@ class RealCamera(CameraBase):
         self.camera.resolution = self.resolution
 
         try:
-            date_and_time = datetime.now().strftime('%Y-%m-%d')
-            file_number = 1
-            file_path = self.settings["files"]["path"]
-            template = self.settings["files"]["template"]
             extension = self.image_format # Use selected format
-            
             # Map format to extension if needed (e.g. jpeg -> jpg)
             if extension == 'jpeg': extension = 'jpg'
             
-            file_name = f'{file_path}/{template.format(date_and_time, str(file_number))}.{extension}'
-
-            while path.exists(file_name):
-                file_number += 1
-                file_name = f'{file_path}/{template.format(date_and_time, str(file_number))}.{extension}'
+            file_name = self._get_next_filename(extension)
 
             # Ensure directory exists
             file_dir = os.path.dirname(file_name)
@@ -656,24 +719,10 @@ class MockCamera(CameraBase):
         print(f"MockCamera: *CLICK* Image captured at {self.resolution} in {self.image_format}")
         
         # Determine filename
-        date_and_time = datetime.now().strftime('%Y-%m-%d')
-        file_number = 1
-        file_path = self.settings["files"]["path"]
-        template = self.settings["files"]["template"]
         extension = self.image_format
         if extension == 'jpeg': extension = 'jpg'
         
-        # Ensure directory exists
-        if not os.path.exists(file_path):
-            try:
-                os.makedirs(file_path)
-            except OSError:
-                pass 
-
-        file_name = f'{file_path}/{template.format(date_and_time, str(file_number))}.{extension}'
-        while path.exists(file_name):
-            file_number += 1
-            file_name = f'{file_path}/{template.format(date_and_time, str(file_number))}.{extension}'
+        file_name = self._get_next_filename(extension)
 
         # Ensure directory exists
         file_dir = os.path.dirname(file_name)

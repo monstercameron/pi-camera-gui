@@ -56,9 +56,14 @@ class GUI:
         print(f"Video Driver: {driver}")
         if driver == 'rpi' or driver == 'null' or driver == 'windows':
             print(f"WARNING: Running with '{driver}' video driver. No window will be visible.")
-            self.settings["files"]["path"] = "images"
-            if not os.path.exists("images"):
-                os.makedirs("images")
+            # Ensure path exists but do not override settings
+            if "files" in self.settings and "path" in self.settings["files"]:
+                path_to_check = self.settings["files"]["path"]
+                if not os.path.exists(path_to_check):
+                    try:
+                        os.makedirs(path_to_check)
+                    except OSError:
+                        pass
 
         # Initial draw to show window immediately
         self.screen.fill((0, 0, 0))

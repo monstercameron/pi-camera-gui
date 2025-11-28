@@ -22,3 +22,7 @@ htmlcov/
 
 # User Data
 images/
+home/dcim/
+home/cache/
+*.db
+*.db-journal

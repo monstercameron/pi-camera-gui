@@ -1,7 +1,11 @@
 from PIL import Image, ExifTags
 import sys
 
-file_path = r"images\2025-11-28_picamera_1.jpg"
+if len(sys.argv) > 1:
+    file_path = sys.argv[1]
+else:
+    print("Usage: python check_exif.py <path_to_image>")
+    sys.exit(1)
 
 try:
     img = Image.open(file_path)

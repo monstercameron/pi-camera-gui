@@ -12,7 +12,7 @@
     },
     "files": {
         "template": "{}_picamera_{}",
-        "path": "images",
+        "path": "home/dcim",
         "extension": "jpg"
     },
     "mode": {
