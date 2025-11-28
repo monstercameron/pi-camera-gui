@@ -9,12 +9,119 @@ try:
 except ImportError:
     pass
 
+import os
 from os import path
 from datetime import datetime
 from typing import Dict, Any, Optional, Tuple, Callable
 from abc import ABC, abstractmethod
 from src.core.config import config
 import pygame
+import shutil
+import threading
+import time
+import queue
+from concurrent.futures import ThreadPoolExecutor
+try:
+    from PIL import Image
+except ImportError:
+    Image = None
+
+def software_encode_task(file_name, data, resolution, fmt, quality, metadata=None):
+    try:
+        if Image:
+            print(f"Software encoding: {file_name} ({fmt})")
+            # Create image from raw RGB
+            img = Image.frombytes('RGB', resolution, data)
+            
+            # Save
+            # Map format to Pillow format
+            pil_fmt = fmt.upper()
+            if pil_fmt == 'JPG': pil_fmt = 'JPEG'
+            
+            # Save params
+            params = {}
+            if pil_fmt == 'JPEG':
+                params['quality'] = quality
+            elif pil_fmt == 'PNG':
+                params['compress_level'] = 6 # Default
+            
+            # Add Metadata (EXIF)
+            if metadata or True: # Always add basic metadata
+                try:
+                    exif = img.getexif()
+                    # Standard EXIF
+                    exif[0x010f] = "Raspberry Pi"             # Make
+                    exif[0x0110] = "PiCamera"                 # Model
+                    exif[0x0131] = "PiCameraGUI"              # Software
+                    exif[0x013b] = "PiCamera User"            # Artist
+                    exif[0x8298] = "Copyright (c) 2025"       # Copyright
+                    exif[0x010e] = "Captured with PiCameraGUI" # ImageDescription
+                    
+                    # DateTime
+                    dt_str = datetime.now().strftime("%Y:%m:%d %H:%M:%S")
+                    exif[0x9003] = dt_str                     # DateTimeOriginal
+                    exif[0x9004] = dt_str                     # DateTimeDigitized
+                    exif[0x0132] = dt_str                     # DateTime
+
+                    # Camera Tech Specs (Static/Mock for now)
+                    exif[0xA405] = 35                         # FocalLengthIn35mmFilm
+                    exif[0x829D] = (28, 10)                   # FNumber (f/2.8)
+                    exif[0x920A] = (304, 100)                 # FocalLength (3.04mm)
+                    exif[0x9205] = (28, 10)                   # MaxApertureValue (f/2.8)
+                    exif[0x9207] = 5                          # MeteringMode (Pattern)
+                    exif[0x9209] = 0                          # Flash (No Flash)
+                    
+                    # Extended Tech Specs
+                    exif[0x920B] = (100, 1)                   # FlashEnergy
+                    exif[0xA433] = "Raspberry Pi"             # LensMake
+                    exif[0xA434] = "PiCamera Module v2"       # LensModel
+                    exif[0xA431] = "0000000000"               # BodySerialNumber
+                    exif[0x9000] = b"0232"                    # ExifVersion
+                    exif[0xA404] = (0, 1)                     # DigitalZoomRatio
+                    exif[0x0106] = 2                          # PhotometricInterpretation (RGB)
+                    
+                    # Dynamic/Default Settings
+                    exif[0xA408] = 0                          # Contrast (Normal)
+                    exif[0x9203] = (50, 100)                  # BrightnessValue
+                    exif[0x9208] = 0                          # LightSource (Unknown)
+                    exif[0x8822] = 2                          # ExposureProgram (Normal)
+                    exif[0xA409] = 0                          # Saturation (Normal)
+                    exif[0xA40A] = 0                          # Sharpness (Normal)
+                    exif[0xA403] = 0                          # WhiteBalance (Auto)
+
+                    # Windows XP Tags (UCS-2 encoded)
+                    def encode_xp(text):
+                        return text.encode('utf-16le') + b'\x00\x00'
+
+                    exif[0x9c9b] = encode_xp("PiCamera Capture")      # XPTitle
+                    exif[0x9c9c] = encode_xp("Created with PiCameraGUI") # XPComment
+                    exif[0x9c9d] = encode_xp("PiCamera User")         # XPAuthor
+                    exif[0x9c9e] = encode_xp("picamera;gui;python")   # XPKeywords
+                    exif[0x9c9f] = encode_xp("Photography")           # XPSubject
+
+                    if metadata:
+                        if 'iso' in metadata:
+                            # 0x8827: ISO
+                            exif[0x8827] = int(metadata['iso'])
+                        
+                        if 'shutter_speed' in metadata:
+                            # 0x829a: ExposureTime (Rational)
+                            # Shutter speed is in microseconds
+                            ss = int(metadata['shutter_speed'])
+                            if ss > 0:
+                                # Convert to seconds fraction (approx)
+                                exif[0x829a] = (ss, 1000000)
+
+                    params['exif'] = exif.tobytes()
+                except Exception as e:
+                    print(f"Error adding EXIF: {e}")
+
+            img.save(file_name, format=pil_fmt, **params)
+            print(f"Software encode success: {file_name}")
+        else:
+            print("Pillow not installed, cannot encode in software.")
+    except Exception as e:
+        print(f"Software encode error: {e}")
 
 class CameraBase(ABC):
     def __init__(self, menus: Dict[str, Any], settings: Dict[str, Any]):
@@ -22,6 +129,13 @@ class CameraBase(ABC):
         self.settings = settings
         self.resolution: Tuple[int, int] = (4000, 3000)
         self.has_hardware_overlay: bool = False
+        self.image_format: str = "jpeg"
+        self.image_quality: int = 85
+        
+        # Encoder Thread Pool
+        # Optimize for RPi 4 (4 cores) or scalable
+        workers = os.cpu_count() or 4
+        self.encoder_pool = ThreadPoolExecutor(max_workers=workers)
 
     @abstractmethod
     def startPreview(self): pass
@@ -50,6 +164,79 @@ class CameraBase(ABC):
     @abstractmethod
     def get_supported_options(self, key: str) -> Optional[list]: pass
 
+    def get_disk_space(self) -> str:
+        try:
+            path_to_check = self.settings["files"]["path"]
+            if not path.exists(path_to_check):
+                return "N/A"
+            total, used, free = shutil.disk_usage(path_to_check)
+            return f"{free // (1024 * 1024)}MB"
+        except Exception:
+            return "N/A"
+
+    def get_estimated_size(self) -> str:
+        # Rough estimation
+        w, h = self.resolution
+        pixels = w * h
+        
+        if self.image_format == "jpeg":
+            # Approx 1/10 compression at 85 quality
+            # Adjust for quality
+            compression = 0.1 * (self.image_quality / 85.0)
+            bytes_size = pixels * 3 * compression
+        elif self.image_format in ["raw", "bmp"]:
+            bytes_size = pixels * 3
+        elif self.image_format == "png":
+            bytes_size = pixels * 3 * 0.5 # Approx
+        else:
+            bytes_size = pixels * 3 * 0.2 # Generic
+            
+        mb_size = bytes_size / (1024 * 1024)
+        return f"{mb_size:.2f}MB"
+
+    def get_remaining_photos(self) -> str:
+        try:
+            path_to_check = self.settings["files"]["path"]
+            if not path.exists(path_to_check):
+                return "0"
+            total, used, free = shutil.disk_usage(path_to_check)
+            
+            # Parse estimated size
+            est_str = self.get_estimated_size()
+            est_mb = float(est_str.replace("MB", ""))
+            if est_mb == 0: est_mb = 0.01 # Avoid div by zero
+            
+            return str(int((free // (1024 * 1024)) / est_mb))
+        except Exception:
+            return "0"
+
+    def set_image_format(self, value=None):
+        if value is not None:
+            self.image_format = value
+            print(f"Image format set to {value}")
+        return self.image_format
+
+    def set_image_quality(self, value=None):
+        if value is not None:
+            self.image_quality = value
+            print(f"Image quality set to {value}")
+        return self.image_quality
+
+    def _save_image_task(self, file_name, data, fmt, quality, resolution):
+        try:
+            print(f"Encoding image: {file_name} ({fmt}, Q={quality})")
+            if Image:
+                # Assuming data is RGB bytes or similar if we captured to stream
+                # For now, if we use PiCamera capture to file, this task is just metadata/post-process
+                # But if we captured to stream, we save here.
+                
+                # If data is None, it means we already saved via hardware (e.g. JPEG)
+                pass
+            else:
+                print("Pillow not installed, cannot encode in software.")
+        except Exception as e:
+            print(f"Error saving image: {e}")
+
 
 class RealCamera(CameraBase):
     def __init__(self, menus: Dict[str, Any], settings: Dict[str, Any]):
@@ -59,6 +246,12 @@ class RealCamera(CameraBase):
         self.camera = picamera.PiCamera()
         self.has_hardware_overlay = True
         self.overlay = None
+        
+        # Capture Queue for sequential hardware access
+        self.capture_queue = queue.Queue()
+        self.capture_worker = threading.Thread(target=self._capture_queue_worker, daemon=True)
+        self.capture_worker.start()
+        
         self._auto_mode()
 
     def get_supported_options(self, key: str) -> Optional[list]:
@@ -183,6 +376,63 @@ class RealCamera(CameraBase):
             self.resolution = str_to_tuple
         return self.resolution
 
+    def _capture_queue_worker(self):
+        while True:
+            try:
+                args = self.capture_queue.get()
+                self._execute_capture(*args)
+                self.capture_queue.task_done()
+            except Exception as e:
+                print(f"Capture worker error: {e}")
+
+    def _execute_capture(self, file_name, resolution, fmt, quality):
+        try:
+            # If format is supported by PiCamera hardware/firmware, use it directly
+            # PiCamera supports: jpeg, png, gif, bmp, yuv, rgb, rgba, bgr, bgra
+            # However, only JPEG is hardware accelerated.
+            
+            # If user wants to use software encoder (e.g. for better PNG compression or unsupported formats),
+            # we should capture to stream and offload.
+            
+            # For now, we stick to PiCamera's capture for simplicity unless it's a format we want to handle manually.
+            # But the user asked for "n remaining encoder threads".
+            
+            # Let's implement a hybrid approach:
+            # 1. If JPEG, use PiCamera (fastest).
+            # 2. If others, capture RGB to stream, then submit to encoder pool.
+            
+            if fmt == 'jpeg':
+                print(f"Starting hardware capture: {file_name} (jpeg, Q={quality})")
+                # PiCamera quality is 1-100
+                self.camera.capture(file_name, format='jpeg', quality=quality)
+                print('Camera capture success:' + file_name)
+            else:
+                # Capture to stream (RGB)
+                import io
+                stream = io.BytesIO()
+                print(f"Capturing raw RGB for software encoding...")
+                self.camera.capture(stream, format='rgb')
+                stream.seek(0)
+                
+                # Offload encoding
+                # We need to read the stream content to pass to thread safely? 
+                # Or just pass the stream.
+                data = stream.read()
+                
+                # Gather Metadata
+                metadata = {
+                    'iso': self.iso(),
+                    'shutter_speed': self.shutter_speed(),
+                    'awb': self.white_balance(),
+                    'exposure': self.exposure()
+                }
+                
+                self.encoder_pool.submit(software_encode_task, file_name, data, resolution, fmt, quality, metadata)
+                
+        except Exception as e:
+            print('Camera capture error')
+            print(e)
+
     def captureImage(self):
         self.camera.resolution = self.resolution
 
@@ -191,7 +441,10 @@ class RealCamera(CameraBase):
             file_number = 1
             file_path = self.settings["files"]["path"]
             template = self.settings["files"]["template"]
-            extension = self.settings["files"]["extension"]
+            extension = self.image_format # Use selected format
+            
+            # Map format to extension if needed (e.g. jpeg -> jpg)
+            if extension == 'jpeg': extension = 'jpg'
             
             file_name = f'{file_path}/{template.format(date_and_time, str(file_number))}.{extension}'
 
@@ -199,14 +452,20 @@ class RealCamera(CameraBase):
                 file_number += 1
                 file_name = f'{file_path}/{template.format(date_and_time, str(file_number))}.{extension}'
 
-            self.camera.capture(file_name)
-            print('Camera capture success:' + file_name)
+            # Ensure directory exists
+            file_dir = os.path.dirname(file_name)
+            if not os.path.exists(file_dir):
+                os.makedirs(file_dir)
+
+            # Queue capture request
+            self.capture_queue.put((file_name, self.resolution, self.image_format, self.image_quality))
+            
         except Exception as e:
-            print('Camera capture error')
+            print('Camera capture setup error')
             print(e)
 
-        self.camera.resolution = (
-            self.settings["display"]["width"], self.settings["display"]["height"])
+        # Reset resolution for preview (if needed, usually preview uses different res)
+        # self.camera.resolution = (self.settings["display"]["width"], self.settings["display"]["height"])
 
     def controls(self, pygame_mod, key):
         if key == pygame_mod.K_RETURN:
@@ -225,7 +484,11 @@ class RealCamera(CameraBase):
             "contrast": self.contrast,
             "saturation": self.saturation,
             "brightness": self.brightness,
-            "resolution": self.resolution_get_set
+            "resolution": self.resolution_get_set,
+            "imageformat": self.set_image_format,
+            "quality": self.set_image_quality,
+            "filesize": self.get_estimated_size,
+            "remaining": self.get_remaining_photos
         }
 
 
@@ -385,7 +648,61 @@ class MockCamera(CameraBase):
         return self.resolution
 
     def captureImage(self):
-        print(f"MockCamera: *CLICK* Image captured at {self.resolution}")
+        print(f"MockCamera: *CLICK* Image captured at {self.resolution} in {self.image_format}")
+        
+        # Determine filename
+        date_and_time = datetime.now().strftime('%Y-%m-%d')
+        file_number = 1
+        file_path = self.settings["files"]["path"]
+        template = self.settings["files"]["template"]
+        extension = self.image_format
+        if extension == 'jpeg': extension = 'jpg'
+        
+        # Ensure directory exists
+        if not os.path.exists(file_path):
+            try:
+                os.makedirs(file_path)
+            except OSError:
+                pass 
+
+        file_name = f'{file_path}/{template.format(date_and_time, str(file_number))}.{extension}'
+        while path.exists(file_name):
+            file_number += 1
+            file_name = f'{file_path}/{template.format(date_and_time, str(file_number))}.{extension}'
+
+        # Ensure directory exists
+        file_dir = os.path.dirname(file_name)
+        if not os.path.exists(file_dir):
+            os.makedirs(file_dir)
+
+        # Capture Data
+        data = None
+        capture_res = self.resolution
+
+        if self.webcam:
+            try:
+                surf = self.webcam.get_image()
+                data = pygame.image.tostring(surf, 'RGB')
+                capture_res = surf.get_size()
+            except Exception as e:
+                print(f"MockCamera: Webcam capture error: {e}")
+        
+        if data is None:
+            # Generate dummy blue image
+            if Image:
+                img = Image.new('RGB', self.resolution, color=(100, 150, 200))
+                data = img.tobytes()
+                capture_res = self.resolution
+
+        if data:
+             # Gather Metadata
+             metadata = {
+                 'iso': self.iso(),
+                 'shutter_speed': self.shutter_speed(),
+                 'awb': self.white_balance(),
+                 'exposure': self.exposure()
+             }
+             self.encoder_pool.submit(software_encode_task, file_name, data, capture_res, self.image_format, self.image_quality, metadata)
 
     def controls(self, pygame_mod, key):
         if key == pygame_mod.K_RETURN:
@@ -404,7 +721,11 @@ class MockCamera(CameraBase):
             "contrast": self.contrast,
             "saturation": self.saturation,
             "brightness": self.brightness,
-            "resolution": self.resolution_get_set
+            "resolution": self.resolution_get_set,
+            "imageformat": self.set_image_format,
+            "quality": self.set_image_quality,
+            "filesize": self.get_estimated_size,
+            "remaining": self.get_remaining_photos
         }
 
     def get_supported_options(self, key: str) -> Optional[list]:

@@ -19,3 +19,6 @@ env/
 .pytest_cache/
 .coverage
 htmlcov/
+
+# User Data
+images/

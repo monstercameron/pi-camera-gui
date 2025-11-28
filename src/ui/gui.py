@@ -33,6 +33,10 @@ class GUI:
         self.transition_to = 0
         self.transition_duration = self.settings["display"].get("animation_duration", 250) # ms
         
+        # Flash Effect State
+        self.flash_start_time = 0
+        self.flash_duration = 25 # ms
+
         # Enable key repeat for fast scrolling (delay=300ms, interval=50ms)
         pygame.key.set_repeat(300, 50)
         
@@ -50,8 +54,11 @@ class GUI:
         # Check video driver
         driver = pygame.display.get_driver()
         print(f"Video Driver: {driver}")
-        if driver == 'dummy':
-            print("WARNING: Running with 'dummy' video driver. No window will be visible.")
+        if driver == 'rpi' or driver == 'null' or driver == 'windows':
+            print(f"WARNING: Running with '{driver}' video driver. No window will be visible.")
+            self.settings["files"]["path"] = "images"
+            if not os.path.exists("images"):
+                os.makedirs("images")
 
         # Initial draw to show window immediately
         self.screen.fill((0, 0, 0))
@@ -96,6 +103,13 @@ class GUI:
                     self.settings["display"]["showmenu"] = not self.settings["display"]["showmenu"]
                     continue # Consume event to prevent capture/other actions
 
+                # Take Photo (Space Bar)
+                if event.type == pygame.KEYDOWN and event.key == pygame.K_SPACE:
+                    if self.camera:
+                        self.camera.captureImage()
+                        self.flash_start_time = pygame.time.get_ticks()
+                    continue
+
                 # Pass event to controls
                 controls_callback(pygame, event, self.menu_positions, self.menus, camera=self.camera, menu_active=self.settings["display"]["showmenu"], quick_menu_pos=self.quick_menu_pos)
 
@@ -116,6 +130,10 @@ class GUI:
                 self._render_camera_overlay()
             else:
                 self.screen.blit(self.layer, (0, 0))
+
+            # Render Flash Effect
+            if pygame.time.get_ticks() - self.flash_start_time < self.flash_duration:
+                self.screen.fill((255, 255, 255))
 
             pygame.display.flip()
             self.clock.tick(self.settings["display"]["refreshrate"])
@@ -501,9 +519,11 @@ class GUI:
                 font = pygame.font.Font('freesansbold.ttf', font_size)
                 
                 # Define priority stats to show
-                priority_stats = ["iso", "shutter", "awb", "exposure"]
+                left_stats = ["iso", "shutter", "awb", "exposure"]
+                right_stats = ["resolution", "filesize", "remaining"]
                 
-                for i, key in enumerate(priority_stats):
+                # Render Left Stats
+                for i, key in enumerate(left_stats):
                     if key in directory:
                         start_x = current_x
                         value = str(directory[key]())
@@ -511,16 +531,12 @@ class GUI:
                         # Try to load icon
                         icon_path = f"src/ui/icons/{key}.svg"
                         try:
-                            # Pygame 2.0+ supports SVG loading if SDL_image is built with it
-                            # If not, this might fail or return empty. 
-                            # Fallback: Draw text label if icon fails or is not supported well
                             icon = pygame.image.load(icon_path)
-                            icon = pygame.transform.scale(icon, (24, 24)) # Scale icon
+                            icon = pygame.transform.scale(icon, (24, 24))
                             icon_rect = icon.get_rect(midleft=(current_x, center_y))
                             self.layer.blit(icon, icon_rect)
                             current_x += 30
                         except (pygame.error, FileNotFoundError):
-                            # Fallback to text label
                             label_surf = font.render(key.upper(), True, (200, 200, 200))
                             label_rect = label_surf.get_rect(midleft=(current_x, center_y))
                             self.layer.blit(label_surf, label_rect)
@@ -535,13 +551,46 @@ class GUI:
                         if not self.settings["display"]["showmenu"] and i == self.quick_menu_pos[0]:
                             end_x = current_x + val_rect.width
                             selection_rect = pygame.Rect(start_x - 5, y + 2, (end_x - start_x) + 10, h - 4)
-                            # Draw semi-transparent background (requires a temp surface for alpha)
                             s = pygame.Surface((selection_rect.width, selection_rect.height), pygame.SRCALPHA)
                             s.fill((255, 255, 255, 50))
                             self.layer.blit(s, selection_rect.topleft)
                             pygame.draw.rect(self.layer, (255, 255, 255), selection_rect, 1)
 
-                        current_x += val_rect.width + 20 # Spacing between items
+                        current_x += val_rect.width + 20
+
+                # Render Right Stats (Right Justified)
+                current_x = x + w - 20
+                for key in reversed(right_stats):
+                    if key in directory:
+                        value = str(directory[key]())
+                        
+                        # Calculate width first to position correctly
+                        val_surf = font.render(value, True, color)
+                        val_width = val_surf.get_width()
+                        
+                        icon_width = 30 # Standard icon width + padding
+                        
+                        # Position: [Icon] [Value] | <-- current_x
+                        # So we move current_x back by (icon + value + spacing)
+                        
+                        item_width = icon_width + val_width
+                        draw_x = current_x - item_width
+                        
+                        # Draw Icon
+                        icon_path = f"src/ui/icons/{key}.svg"
+                        try:
+                            icon = pygame.image.load(icon_path)
+                            icon = pygame.transform.scale(icon, (24, 24))
+                            icon_rect = icon.get_rect(midleft=(draw_x, center_y))
+                            self.layer.blit(icon, icon_rect)
+                        except (pygame.error, FileNotFoundError):
+                            pass # Skip icon if missing for right stats to save space/complexity
+
+                        # Draw Value
+                        val_rect = val_surf.get_rect(midleft=(draw_x + 30, center_y))
+                        self.layer.blit(val_surf, val_rect)
+                        
+                        current_x -= (item_width + 20) # Move left for next item
 
                 # Delegate rendering to camera
                 self.camera.render(self.layer, self.screen)

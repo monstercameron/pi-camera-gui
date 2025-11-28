@@ -303,8 +303,69 @@
                             "displayname": "3000 x 3000"
                         }
                     ],
-                    "value": "4056,3040",
+                    "value": "1280,720",
                     "_original_value": "4056,3040"
+                },
+                {
+                    "name": "imageformat",
+                    "displayname": "Image Format",
+                    "type": "list",
+                    "options": [
+                        {
+                            "value": "jpeg",
+                            "displayname": "JPEG"
+                        },
+                        {
+                            "value": "png",
+                            "displayname": "PNG"
+                        },
+                        {
+                            "value": "bmp",
+                            "displayname": "BMP"
+                        },
+                        {
+                            "value": "gif",
+                            "displayname": "GIF"
+                        },
+                        {
+                            "value": "yuv",
+                            "displayname": "YUV"
+                        },
+                        {
+                            "value": "rgb",
+                            "displayname": "RGB"
+                        },
+                        {
+                            "value": "rgba",
+                            "displayname": "RGBA"
+                        },
+                        {
+                            "value": "bgr",
+                            "displayname": "BGR"
+                        },
+                        {
+                            "value": "bgra",
+                            "displayname": "BGRA"
+                        },
+                        {
+                            "value": "raw",
+                            "displayname": "RAW"
+                        }
+                    ],
+                    "value": "png",
+                    "_original_value": "jpeg"
+                },
+                {
+                    "name": "quality",
+                    "displayname": "Image Quality",
+                    "type": "range",
+                    "options": {
+                        "min": 1,
+                        "max": 100,
+                        "step": 5
+                    },
+                    "value": 100,
+                    "_original_value": 85
                 },
                 {
                     "name": "dynamicRangeCompression",
