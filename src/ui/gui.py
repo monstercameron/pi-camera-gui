@@ -11,6 +11,7 @@ class GUI:
         self.menus = menus
         self.camera = camera
         self.menu_positions = [0, 0, 0, 0]  # menu_index, submenu_index, option_index, level
+        self.quick_menu_pos = [0] # Selected index for quick stats menu
         
         pygame.init()
         self.width = settings["display"]["width"]
@@ -96,7 +97,7 @@ class GUI:
                     continue # Consume event to prevent capture/other actions
 
                 # Pass event to controls
-                controls_callback(pygame, event, self.menu_positions, self.menus, camera=self.camera, menu_active=self.settings["display"]["showmenu"])
+                controls_callback(pygame, event, self.menu_positions, self.menus, camera=self.camera, menu_active=self.settings["display"]["showmenu"], quick_menu_pos=self.quick_menu_pos)
 
             # Detect Level Change for Animation
             current_level = self.menu_positions[3]
@@ -502,8 +503,9 @@ class GUI:
                 # Define priority stats to show
                 priority_stats = ["iso", "shutter", "awb", "exposure"]
                 
-                for key in priority_stats:
+                for i, key in enumerate(priority_stats):
                     if key in directory:
+                        start_x = current_x
                         value = str(directory[key]())
                         
                         # Try to load icon
@@ -529,6 +531,16 @@ class GUI:
                         val_rect = val_surf.get_rect(midleft=(current_x, center_y))
                         self.layer.blit(val_surf, val_rect)
                         
+                        # Draw Selection Box if active
+                        if not self.settings["display"]["showmenu"] and i == self.quick_menu_pos[0]:
+                            end_x = current_x + val_rect.width
+                            selection_rect = pygame.Rect(start_x - 5, y + 2, (end_x - start_x) + 10, h - 4)
+                            # Draw semi-transparent background (requires a temp surface for alpha)
+                            s = pygame.Surface((selection_rect.width, selection_rect.height), pygame.SRCALPHA)
+                            s.fill((255, 255, 255, 50))
+                            self.layer.blit(s, selection_rect.topleft)
+                            pygame.draw.rect(self.layer, (255, 255, 255), selection_rect, 1)
+
                         current_x += val_rect.width + 20 # Spacing between items
 
                 # Delegate rendering to camera

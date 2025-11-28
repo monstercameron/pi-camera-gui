@@ -3,7 +3,7 @@ from typing import Dict, Any, List, Optional
 
 class MenuController:
     @staticmethod
-    def handle_event(pygame_mod, event, menu_pos: List[int], menus: Dict[str, Any], camera: Optional[Any] = None, menu_active: bool = True):
+    def handle_event(pygame_mod, event, menu_pos: List[int], menus: Dict[str, Any], camera: Optional[Any] = None, menu_active: bool = True, quick_menu_pos: Optional[List[int]] = None):
         """
         Handles input events for menu navigation and value updates.
         menu_pos: [menu_index, submenu_index, option_index, level]
@@ -25,6 +25,20 @@ class MenuController:
                     MenuController._navigate(1, menu_pos, menus)
                 elif event.key == pygame_mod.K_LEFT:
                     MenuController._navigate(-1, menu_pos, menus)
+            elif quick_menu_pos is not None and camera is not None:
+                # Quick Menu Logic (when main menu is inactive)
+                if event.key == pygame_mod.K_RIGHT:
+                    # Cycle to next stat (4 stats: ISO, Shutter, AWB, Exposure)
+                    quick_menu_pos[0] = (quick_menu_pos[0] + 1) % 4
+                elif event.key == pygame_mod.K_LEFT:
+                    # Cycle to prev stat
+                    quick_menu_pos[0] = (quick_menu_pos[0] - 1) % 4
+                elif event.key == pygame_mod.K_UP:
+                    # Increase value (or next item)
+                    MenuController._handle_quick_value_change(1, quick_menu_pos[0], menus, camera)
+                elif event.key == pygame_mod.K_DOWN:
+                    # Decrease value (or prev item)
+                    MenuController._handle_quick_value_change(-1, quick_menu_pos[0], menus, camera)
 
             # Camera specific controls (e.g. Capture)
             if camera is not None:
@@ -160,6 +174,70 @@ class MenuController:
             except (KeyError, IndexError):
                 pass
         return None
+
+    @staticmethod
+    def _find_menu_item(menus: Dict[str, Any], name: str) -> Optional[Dict[str, Any]]:
+        for menu in menus["menus"]:
+            for option in menu["options"]:
+                if option["name"] == name:
+                    return option
+        return None
+
+    @staticmethod
+    def _handle_quick_value_change(direction: int, stat_index: int, menus: Dict[str, Any], camera: Any):
+        stat_names = ["iso", "shutter", "awb", "exposure"]
+        stat_name = stat_names[stat_index]
+        
+        option = MenuController._find_menu_item(menus, stat_name)
+        if not option:
+            return
+
+        if option["type"] == "range":
+            current_val = option["value"]
+            step = option["options"]["step"]
+            min_val = option["options"]["min"]
+            max_val = option["options"]["max"]
+            
+            new_val = current_val
+            if direction > 0: # UP
+                if current_val < max_val: new_val += step
+            else: # DOWN
+                if current_val > min_val: new_val -= step
+            
+            if new_val != current_val:
+                option["value"] = new_val
+                MenuController._apply_setting(camera, option)
+
+        elif option["type"] == "list":
+            current_val = option["value"]
+            options_list = option["options"]
+            
+            current_idx = -1
+            for i, item in enumerate(options_list):
+                val = item["value"] if isinstance(item, dict) else item
+                if val == current_val:
+                    current_idx = i
+                    break
+            
+            if current_idx != -1:
+                new_idx = current_idx
+                if direction > 0: # UP -> Next item
+                    if new_idx < len(options_list) - 1:
+                        new_idx += 1
+                    else:
+                        new_idx = 0 # Loop
+                else: # DOWN -> Prev item
+                    if new_idx > 0:
+                        new_idx -= 1
+                    else:
+                        new_idx = len(options_list) - 1 # Loop
+                
+                new_item = options_list[new_idx]
+                new_val = new_item["value"] if isinstance(new_item, dict) else new_item
+                
+                if new_val != current_val:
+                    option["value"] = new_val
+                    MenuController._apply_setting(camera, option)
 
     @staticmethod
     def _apply_setting(camera: Any, option: Dict[str, Any]):

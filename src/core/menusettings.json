@@ -179,7 +179,8 @@
                             "displayname": "Fireworks"
                         }
                     ],
-                    "value": "backlight"
+                    "value": "night",
+                    "_original_value": "beach"
                 },
                 {
                     "name": "shutter",
@@ -190,7 +191,7 @@
                         "max": 32000,
                         "step": 1000
                     },
-                    "value": 14000
+                    "value": 22000
                 },
                 {
                     "name": "iso",
@@ -201,7 +202,8 @@
                         "max": 1600,
                         "step": 100
                     },
-                    "value": 1600
+                    "value": 1000,
+                    "_original_value": 300
                 },
                 {
                     "name": "awb",
@@ -249,7 +251,8 @@
                             "displayname": "Horizon"
                         }
                     ],
-                    "value": "incandescent"
+                    "value": "cloudy",
+                    "_original_value": "auto"
                 }
             ]
         },
