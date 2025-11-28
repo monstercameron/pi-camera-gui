@@ -20,6 +20,8 @@ import shutil
 import threading
 import time
 import queue
+import json
+import uuid
 from concurrent.futures import ThreadPoolExecutor
 try:
     from PIL import Image
@@ -160,6 +162,174 @@ def software_encode_task(file_name, data, resolution, fmt, quality, metadata=Non
     except Exception as e:
         print(f"Software encode error: {e}")
 
+class ResumableQueue:
+    def __init__(self, temp_dir):
+        self.temp_dir = temp_dir
+        if not os.path.exists(self.temp_dir):
+            os.makedirs(self.temp_dir)
+            
+        # Hybrid Queue Setup
+        # We use RAM if workers are available, otherwise disk.
+        self.max_workers = os.cpu_count() or 4
+        self.executor = ThreadPoolExecutor(max_workers=self.max_workers)
+        self.active_count = 0
+        self.lock = threading.Lock()
+        
+        self.running = True
+        self.worker_thread = threading.Thread(target=self._worker, daemon=True)
+        self.worker_thread.start()
+
+    def _wrapped_task(self, func, *args, **kwargs):
+        """Wraps a task to decrement the active count when done."""
+        try:
+            func(*args, **kwargs)
+        finally:
+            with self.lock:
+                self.active_count -= 1
+
+    def add_encoding_job(self, target_file, data, resolution, fmt, quality, metadata):
+        # Try RAM first
+        use_ram = False
+        with self.lock:
+            if self.active_count < self.max_workers:
+                self.active_count += 1
+                use_ram = True
+        
+        if use_ram:
+            print(f"Queue: Processing in RAM -> {target_file}")
+            self.executor.submit(
+                self._wrapped_task, 
+                software_encode_task, 
+                target_file, data, resolution, fmt, quality, metadata
+            )
+            return
+
+        # Fallback to Disk
+        print(f"Queue: Busy ({self.active_count}/{self.max_workers}), caching to disk -> {target_file}")
+        job_id = f"{int(time.time())}_{uuid.uuid4().hex[:8]}"
+        job_file = os.path.join(self.temp_dir, f"{job_id}.json")
+        data_file = os.path.join(self.temp_dir, f"{job_id}.bin")
+        
+        # Save Data
+        with open(data_file, 'wb') as f:
+            f.write(data)
+            
+        # Save Job Info
+        job_info = {
+            'type': 'encode',
+            'target_file': target_file,
+            'data_file': data_file,
+            'resolution': resolution,
+            'fmt': fmt,
+            'quality': quality,
+            'metadata': metadata
+        }
+        with open(job_file, 'w') as f:
+            json.dump(job_info, f)
+            
+    def add_exif_job(self, target_file, metadata):
+        # Try RAM first
+        use_ram = False
+        with self.lock:
+            if self.active_count < self.max_workers:
+                self.active_count += 1
+                use_ram = True
+                
+        if use_ram:
+             self.executor.submit(
+                self._wrapped_task, 
+                add_exif_to_file_task, 
+                target_file, metadata
+            )
+             return
+
+        job_id = f"{int(time.time())}_{uuid.uuid4().hex[:8]}"
+        job_file = os.path.join(self.temp_dir, f"{job_id}.json")
+        
+        job_info = {
+            'type': 'exif',
+            'target_file': target_file,
+            'metadata': metadata
+        }
+        with open(job_file, 'w') as f:
+            json.dump(job_info, f)
+
+    def _worker(self):
+        print(f"ResumableQueue worker started. Watching {self.temp_dir}")
+        while self.running:
+            # Check capacity
+            can_process = False
+            with self.lock:
+                if self.active_count < self.max_workers:
+                    can_process = True
+            
+            if not can_process:
+                time.sleep(0.1)
+                continue
+
+            # Find jobs
+            try:
+                job_files = sorted([f for f in os.listdir(self.temp_dir) if f.endswith('.json')])
+                if not job_files:
+                    time.sleep(0.5)
+                    continue
+                
+                # We have a job and capacity.
+                # Reserve the slot immediately before processing to prevent race
+                with self.lock:
+                    if self.active_count >= self.max_workers:
+                        continue # Lost the slot
+                    self.active_count += 1
+                
+                # Process oldest first
+                current_job_file = os.path.join(self.temp_dir, job_files[0])
+                
+                # Submit the disk processing task to the executor
+                self.executor.submit(self._wrapped_task, self._process_disk_job, current_job_file)
+                
+            except Exception as e:
+                print(f"Queue worker error: {e}")
+                time.sleep(1)
+
+    def _process_disk_job(self, job_file_path):
+        try:
+            with open(job_file_path, 'r') as f:
+                job = json.load(f)
+            
+            print(f"Processing disk job: {job['type']} -> {job['target_file']}")
+            
+            if job['type'] == 'encode':
+                if os.path.exists(job['data_file']):
+                    with open(job['data_file'], 'rb') as f:
+                        data = f.read()
+                    software_encode_task(
+                        job['target_file'], 
+                        data, 
+                        tuple(job['resolution']), 
+                        job['fmt'], 
+                        job['quality'], 
+                        job['metadata']
+                    )
+                    try:
+                        os.remove(job['data_file'])
+                    except OSError:
+                        pass
+                else:
+                    print(f"Error: Data file missing for job {job_file_path}")
+                    
+            elif job['type'] == 'exif':
+                add_exif_to_file_task(job['target_file'], job['metadata'])
+            
+            # Cleanup job file
+            try:
+                os.remove(job_file_path)
+            except OSError:
+                pass
+                
+        except Exception as e:
+            print(f"Error processing disk job {job_file_path}: {e}")
+            # If corrupt, maybe delete?
+
 class CameraBase(ABC):
     def __init__(self, menus: Dict[str, Any], settings: Dict[str, Any]):
         self.menus = menus
@@ -169,10 +339,10 @@ class CameraBase(ABC):
         self.image_format: str = "jpeg"
         self.image_quality: int = 85
         
-        # Encoder Thread Pool
-        # Optimize for RPi 4 (4 cores) or scalable
-        workers = os.cpu_count() or 4
-        self.encoder_pool = ThreadPoolExecutor(max_workers=workers)
+        # Resumable Queue
+        # Stores raw captures to disk to survive power loss
+        queue_path = os.path.join("home", "cache")
+        self.queue_manager = ResumableQueue(queue_path)
 
     @abstractmethod
     def startPreview(self): pass
@@ -477,7 +647,7 @@ class RealCamera(CameraBase):
                     'awb': self.white_balance(),
                     'exposure': self.exposure()
                 }
-                self.encoder_pool.submit(add_exif_to_file_task, file_name, metadata)
+                self.queue_manager.add_exif_job(file_name, metadata)
             else:
                 # Capture to stream (RGB)
                 import io
@@ -499,7 +669,7 @@ class RealCamera(CameraBase):
                     'exposure': self.exposure()
                 }
                 
-                self.encoder_pool.submit(software_encode_task, file_name, data, resolution, fmt, quality, metadata)
+                self.queue_manager.add_encoding_job(file_name, data, resolution, fmt, quality, metadata)
                 
         except Exception as e:
             print('Camera capture error')
@@ -756,7 +926,7 @@ class MockCamera(CameraBase):
                  'awb': self.white_balance(),
                  'exposure': self.exposure()
              }
-             self.encoder_pool.submit(software_encode_task, file_name, data, capture_res, self.image_format, self.image_quality, metadata)
+             self.queue_manager.add_encoding_job(file_name, data, capture_res, self.image_format, self.image_quality, metadata)
 
     def controls(self, pygame_mod, key):
         if key == pygame_mod.K_RETURN:

@@ -10,6 +10,7 @@ Built with **Pygame**, this project turns your Raspberry Pi into a proper digita
 *   **Deep Control**: Tweak everything from **ISO** and **Shutter Speed** to **AWB** and **Image Effects**.
 *   **Rich Metadata**: Your photos aren't just pixels; they come packed with **EXIF data** (Lens info, Copyright, XP Tags).
 *   **Mock Mode**: No Pi? No problem! Run it on your PC using your webcam to test the UI.
+*   **Resumable Queue**: Never lose a shot! Images are processed in RAM for speed, but automatically cached to disk (`home/cache`) if the system gets busy or power is lost.
 *   **Persistent Settings**: We remember your tweaks using a local SQLite database.
 *   **Reset Button**: Messed up your settings? Hit the "Reset Settings" option to go back to fresh defaults.
 
@@ -54,6 +55,7 @@ Navigate the UI like a pro. (Default keyboard mappings, customizable in `home/co
 
 We keep your data organized in the `home/` directory:
 *   **`home/dcim/`**: Your captured masterpieces go here.
+*   **`home/cache/`**: Temporary storage for the resumable queue (automatically cleaned up).
 *   **`home/config/`**: Configuration files and your settings database.
 
 ## 🛠️ Development
