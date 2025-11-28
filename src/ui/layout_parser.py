@@ -6,6 +6,7 @@ class LayoutParser:
     def __init__(self, layout_dir: str = "src/ui/layouts"):
         self.layout_dir = layout_dir
         self.layouts: Dict[str, Any] = {}
+        self.file_timestamps: Dict[str, float] = {}
         self.current_layout_name = "default"
         self._load_layout("default")
 
@@ -33,6 +34,7 @@ class LayoutParser:
         try:
             tree = ET.parse(path)
             self.layouts[name] = tree.getroot()
+            self.file_timestamps[name] = os.path.getmtime(path)
             print(f"Loaded layout: {name}")
             return True
         except Exception as e:
@@ -51,6 +53,23 @@ class LayoutParser:
             if elem.get('id') == element_id:
                 return elem.attrib
         return None
+
+    def check_for_updates(self):
+        """Checks if the current layout file has changed and reloads it."""
+        name = self.current_layout_name
+        filename = f"{name}.xml"
+        path = os.path.join(self.layout_dir, filename)
+        
+        if os.path.exists(path):
+            try:
+                current_mtime = os.path.getmtime(path)
+                last_mtime = self.file_timestamps.get(name, 0)
+                
+                if current_mtime > last_mtime:
+                    print(f"Reloading layout: {name}")
+                    self._load_layout(name)
+            except OSError:
+                pass
 
     def get_layout_structure(self) -> Dict[str, Any]:
         """

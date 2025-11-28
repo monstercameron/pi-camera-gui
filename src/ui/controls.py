@@ -10,7 +10,9 @@ class MenuController:
         """
         if event.type == pygame_mod.KEYDOWN:
             if event.key == pygame_mod.K_ESCAPE:
-                pygame_mod.quit()
+                # Post a QUIT event instead of calling quit() directly
+                # This allows the main loop to handle the exit gracefully
+                pygame_mod.event.post(pygame_mod.event.Event(pygame_mod.QUIT))
                 return
 
             # Navigation / Value Change
@@ -132,7 +134,12 @@ class MenuController:
         if menu_pos[3] == 2: # We are selecting a value
             try:
                 option = menus["menus"][menu_pos[0]]["options"][menu_pos[1]]
-                selected_value = option["options"][menu_pos[2]]
+                selected_item = option["options"][menu_pos[2]]
+                
+                if isinstance(selected_item, dict) and "value" in selected_item:
+                    selected_value = selected_item["value"]
+                else:
+                    selected_value = selected_item
                 
                 if option["value"] != selected_value:
                     option["value"] = selected_value

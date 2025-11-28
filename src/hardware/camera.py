@@ -47,6 +47,9 @@ class CameraBase(ABC):
     @abstractmethod
     def render(self, overlay_surface: pygame.Surface, display_surface: pygame.Surface): pass
 
+    @abstractmethod
+    def get_supported_options(self, key: str) -> Optional[list]: pass
+
 
 class RealCamera(CameraBase):
     def __init__(self, menus: Dict[str, Any], settings: Dict[str, Any]):
@@ -57,6 +60,22 @@ class RealCamera(CameraBase):
         self.has_hardware_overlay = True
         self.overlay = None
         self._auto_mode()
+
+    def get_supported_options(self, key: str) -> Optional[list]:
+        try:
+            if key == "awb":
+                return list(picamera.PiCamera.AWB_MODES.keys())
+            elif key == "exposure":
+                return list(picamera.PiCamera.EXPOSURE_MODES.keys())
+            elif key == "imageeffect":
+                return list(picamera.PiCamera.IMAGE_EFFECTS.keys())
+            elif key == "metering":
+                return list(picamera.PiCamera.METER_MODES.keys())
+            elif key == "dynamicRangeCompression":
+                return list(picamera.PiCamera.DRC_STRENGTHS.keys())
+        except AttributeError:
+            pass
+        return None
 
     def _auto_mode(self):
         self.camera.exposure_mode = 'auto'
@@ -387,6 +406,18 @@ class MockCamera(CameraBase):
             "brightness": self.brightness,
             "resolution": self.resolution_get_set
         }
+
+    def get_supported_options(self, key: str) -> Optional[list]:
+        if key == "awb":
+            return ["off", "auto", "sunlight", "cloudy", "shade", "tungsten", "fluorescent", "incandescent", "flash", "horizon"]
+        elif key == "exposure":
+            return ["off", "auto", "night", "nightpreview", "backlight", "spotlight", "sports", "snow", "beach", "verylong", "fixedfps", "antishake", "fireworks"]
+        elif key == "imageeffect":
+            return ["none", "negative", "solarize", "sketch", "denoise", "emboss", "oilpaint", "hatch", "gpen", "pastel", "watercolor", "film", "blur", "saturation", "colorswap", "washedout", "posterise", "colorpoint", "colorbalance", "cartoon", "deinterlace1", "deinterlace2"]
+        elif key == "dynamicRangeCompression":
+            return ["off", "low", "medium", "high"]
+        return None
+
 
 def get_camera(menus: Dict[str, Any], settings: Dict[str, Any]) -> CameraBase:
     if config.USE_MOCK_CAMERA:
