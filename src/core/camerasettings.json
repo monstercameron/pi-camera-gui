@@ -21,31 +21,31 @@
     "buttons": [
         {
             "name": "capture",
-            "description":"take photos",
+            "description": "take photos",
             "gpio": 15,
             "event": 13
         },
         {
             "name": "keyup",
-            "description":"menu up",
+            "description": "menu up",
             "gpio": 21,
             "event": 273
         },
         {
             "name": "keyright",
-            "description":"menu enter",
+            "description": "menu enter",
             "gpio": 26,
             "event": 275
         },
         {
             "name": "keydown",
-            "description":"menu down",
+            "description": "menu down",
             "gpio": 16,
             "event": 274
         },
         {
             "name": "keyleft",
-            "description":"menu exit",
+            "description": "menu exit",
             "gpio": 20,
             "event": 276
         }

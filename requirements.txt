@@ -2,7 +2,6 @@ astroid==4.0.2
 autopep8==2.3.2
 colorama==0.4.6
 colorzero==2.0
-deepdiff==8.6.1
 dill==0.4.0
 gpiozero==2.0.1
 isort==7.0.0

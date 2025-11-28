@@ -1,0 +1,10 @@
+<layout>
+    <container id="main" width="100%" height="100%">
+        <container id="menu_area" x="20" y="20" width="300" height="100%">
+            <!-- Image Settings Menu Layout -->
+        </container>
+        <container id="stats_area" x="center" y="bottom" width="100%" height="50">
+            <text id="stats_text" font="small" color="#FFFFFF" />
+        </container>
+    </container>
+</layout>

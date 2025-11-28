@@ -1,4 +1,21 @@
-__pycache__
-.vscode/*
-*.pyc
+__pycache__/
+*.py[cod]
+*$py.class
+.vscode/
 secret*
+
+# Distribution / packaging
+dist/
+build/
+*.egg-info/
+*.spec
+
+# Virtual environments
+venv/
+env/
+.env
+
+# Testing
+.pytest_cache/
+.coverage
+htmlcov/
