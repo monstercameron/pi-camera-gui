@@ -521,9 +521,11 @@ class MockCamera(CameraBase):
         try:
             cameras = pygame.camera.list_cameras()
             if cameras:
-                self.webcam = pygame.camera.Camera(cameras[0])
+                self.webcam_device = cameras[0]
+                print(f"MockCamera: Requesting resolution {self.resolution}")
+                self.webcam = pygame.camera.Camera(self.webcam_device, self.resolution)
                 self.webcam.start()
-                print(f"MockCamera: Webcam started on {cameras[0]}")
+                print(f"MockCamera: Webcam started on {self.webcam_device} at {self.webcam.get_size()}")
             else:
                 print("MockCamera: No webcam found")
         except Exception as e:
@@ -645,6 +647,9 @@ class MockCamera(CameraBase):
             str_to_tuple = tuple(map(int, value.split(',')))
             self.resolution = str_to_tuple
             print(f"MockCamera: Set resolution to {self.resolution}")
+            if self.is_previewing:
+                self.stopPreview()
+                self.startPreview()
         return self.resolution
 
     def captureImage(self):

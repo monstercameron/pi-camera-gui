@@ -6,7 +6,7 @@
         "refreshrate": 30,
         "fontsize": 32,
         "padding": 10,
-        "showmenu": true,
+        "showmenu": false,
         "fullscreen": false,
         "animation_duration": 100
     },
