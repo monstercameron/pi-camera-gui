@@ -9,6 +9,7 @@ class LayoutParser:
         self.layouts: Dict[str, Any] = {}
         self.file_timestamps: Dict[str, float] = {}
         self.current_layout_name = "default"
+        self._id_cache: Dict[str, Dict[str, Any]] = {} # Cache for get_element_by_id
         self._load_layout("default")
 
     def load_layout(self, layout_name: str):
@@ -29,13 +30,24 @@ class LayoutParser:
         path = os.path.join(self.layout_dir, filename)
         
         if not os.path.exists(path):
-            print(f"Layout file not found: {path}")
+            print(f"Error loading layout {name}: {os.strerror(2)}: '{path}'")
             return False
             
         try:
             tree = ET.parse(path)
-            self.layouts[name] = tree.getroot()
+            root = tree.getroot()
+            self.layouts[name] = root
             self.file_timestamps[name] = os.path.getmtime(path)
+            
+            # Populate ID cache for this layout
+            if name not in self._id_cache:
+                self._id_cache[name] = {}
+                
+            for elem in root.iter():
+                eid = elem.get('id')
+                if eid:
+                    self._id_cache[name][eid] = self._resolve_variables(elem.attrib)
+            
             print(f"Loaded layout: {name}")
             return True
         except Exception as e:
@@ -46,8 +58,14 @@ class LayoutParser:
         """
         Finds an element by ID in the CURRENT layout and returns its attributes.
         """
+        # Check cache first
+        if self.current_layout_name in self._id_cache:
+            if element_id in self._id_cache[self.current_layout_name]:
+                return self._id_cache[self.current_layout_name][element_id]
+        
+        # Fallback to iteration (shouldn't happen if cache is working correctly)
         root = self.layouts.get(self.current_layout_name)
-        if not root:
+        if root is None:
             return None
             
         for elem in root.iter():
@@ -101,7 +119,7 @@ class LayoutParser:
         Returns a simplified dictionary representation of the current layout.
         """
         root = self.layouts.get(self.current_layout_name)
-        if not root:
+        if root is None:
             return {}
         return self._parse_element(root)
 

@@ -1,5 +1,4 @@
 import pygame
-from time import sleep
 from typing import Dict, Any, Type
 from src.core.config import config
 
@@ -41,18 +40,46 @@ class Buttons:
     def __init__(self, settings: Dict[str, Any]):
         self.buttons: Dict[str, Any] = {}
         self._initialize_buttons(settings)
+        
+        # Key Repeat State
+        self.pressed_state: Dict[str, int] = {} # key -> start_time
+        self.last_repeat: Dict[str, int] = {}   # key -> last_event_time
+        
+        self.initial_delay = 300 # ms
+        self.repeat_interval = 50 # ms
 
     def listen(self, pygame_mod):
         """
         Polls the hardware buttons and posts Pygame events if pressed.
         """
+        current_time = pygame_mod.time.get_ticks()
+        
         for key, data in self.buttons.items():
             if data["button"].is_pressed:
-                evt = pygame_mod.event.Event(
-                    pygame_mod.KEYDOWN, key=data["event"])
-                pygame_mod.event.post(evt)
-                print(f"key: '{key}' was pressed")
-                sleep(0.25) # Debounce / Repeat delay
+                if key not in self.pressed_state:
+                    # First Press
+                    self.pressed_state[key] = current_time
+                    self.last_repeat[key] = current_time
+                    
+                    evt = pygame_mod.event.Event(pygame_mod.KEYDOWN, key=data["event"])
+                    pygame_mod.event.post(evt)
+                    print(f"key: '{key}' was pressed")
+                else:
+                    # Holding
+                    duration = current_time - self.pressed_state[key]
+                    since_last = current_time - self.last_repeat[key]
+                    
+                    if duration > self.initial_delay and since_last > self.repeat_interval:
+                        evt = pygame_mod.event.Event(pygame_mod.KEYDOWN, key=data["event"])
+                        pygame_mod.event.post(evt)
+                        # print(f"key: '{key}' repeated")
+                        self.last_repeat[key] = current_time
+            else:
+                # Released
+                if key in self.pressed_state:
+                    del self.pressed_state[key]
+                    if key in self.last_repeat:
+                        del self.last_repeat[key]
 
     def _initialize_buttons(self, settings: Dict[str, Any]):
         self.buttons = {}

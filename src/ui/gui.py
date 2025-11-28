@@ -42,6 +42,9 @@ class GUI:
         
         self.running = True
         
+        # Cache
+        self._icon_cache: Dict[str, Any] = {}
+        
         # Initialize Layout Parser
         try:
             self.layout = LayoutParser(theme_config=settings.get("theme", {}))
@@ -54,7 +57,7 @@ class GUI:
         # Check video driver
         driver = pygame.display.get_driver()
         print(f"Video Driver: {driver}")
-        if driver == 'rpi' or driver == 'null' or driver == 'windows':
+        if driver == 'rpi' or driver == 'null':
             print(f"WARNING: Running with '{driver}' video driver. No window will be visible.")
             # Ensure path exists but do not override settings
             if "files" in self.settings and "path" in self.settings["files"]:
@@ -337,12 +340,23 @@ class GUI:
 
                 icon_path = f"src/ui/icons/{raw_name}.svg"
                 
-                if os.path.exists(icon_path):
+                # Check Cache
+                if icon_path in self._icon_cache:
+                    icon = self._icon_cache[icon_path]
+                    if icon:
+                        # Center icon
+                        icon_rect = icon.get_rect(center=(x + w//2, current_y + (i * item_height) + item_height//2))
+                        self.layer.blit(icon, icon_rect)
+                        icon_loaded = True
+                elif os.path.exists(icon_path):
                     try:
                         icon = pygame.image.load(icon_path)
                         # Scale icon to fit within item_height (with some padding)
                         icon_size = int(item_height * 0.7)
                         icon = pygame.transform.scale(icon, (icon_size, icon_size))
+                        
+                        # Cache it
+                        self._icon_cache[icon_path] = icon
                         
                         # Center icon
                         icon_rect = icon.get_rect(center=(x + w//2, current_y + (i * item_height) + item_height//2))
@@ -350,6 +364,9 @@ class GUI:
                         icon_loaded = True
                     except Exception as e:
                         print(f"Failed to load icon {icon_path}: {e}")
+                        self._icon_cache[icon_path] = None # Cache failure to avoid retry
+                else:
+                    self._icon_cache[icon_path] = None
                 
                 if not icon_loaded:
                     short_name = display_name[0] if display_name else "?"
@@ -371,18 +388,29 @@ class GUI:
                     raw_name = icon_aliases[raw_name]
 
                 icon_path = f"src/ui/icons/{raw_name}.svg"
-                if os.path.exists(icon_path):
+                
+                # Check Cache
+                if icon_path in self._icon_cache:
+                    icon = self._icon_cache[icon_path]
+                    if icon:
+                        icon_y = current_y + (i * item_height) + (item_height - icon.get_height()) // 2
+                        self.layer.blit(icon, (current_x, icon_y))
+                        icon_width = icon.get_width() + 10
+                elif os.path.exists(icon_path):
                     try:
                         icon = pygame.image.load(icon_path)
                         icon_size = int(item_height * 0.6)
                         icon = pygame.transform.scale(icon, (icon_size, icon_size))
+                        self._icon_cache[icon_path] = icon
                         
                         # Position icon to the left of text
                         icon_y = current_y + (i * item_height) + (item_height - icon_size) // 2
                         self.layer.blit(icon, (current_x, icon_y))
                         icon_width = icon_size + 10 # Add spacing
                     except Exception:
-                        pass
+                        self._icon_cache[icon_path] = None
+                else:
+                    self._icon_cache[icon_path] = None
 
                 name_text = display_name
 
@@ -535,13 +563,32 @@ class GUI:
                         
                         # Try to load icon
                         icon_path = f"src/ui/icons/{key}.svg"
-                        try:
-                            icon = pygame.image.load(icon_path)
-                            icon = pygame.transform.scale(icon, (24, 24))
-                            icon_rect = icon.get_rect(midleft=(current_x, center_y))
-                            self.layer.blit(icon, icon_rect)
-                            current_x += 30
-                        except (pygame.error, FileNotFoundError):
+                        
+                        # Check Cache
+                        icon_drawn = False
+                        if icon_path in self._icon_cache:
+                            icon = self._icon_cache[icon_path]
+                            if icon:
+                                icon_rect = icon.get_rect(midleft=(current_x, center_y))
+                                self.layer.blit(icon, icon_rect)
+                                current_x += 30
+                                icon_drawn = True
+                        elif os.path.exists(icon_path):
+                            try:
+                                icon = pygame.image.load(icon_path)
+                                icon = pygame.transform.scale(icon, (24, 24))
+                                self._icon_cache[icon_path] = icon
+                                
+                                icon_rect = icon.get_rect(midleft=(current_x, center_y))
+                                self.layer.blit(icon, icon_rect)
+                                current_x += 30
+                                icon_drawn = True
+                            except (pygame.error, FileNotFoundError):
+                                self._icon_cache[icon_path] = None
+                        else:
+                            self._icon_cache[icon_path] = None
+                            
+                        if not icon_drawn:
                             label_surf = font.render(key.upper(), True, (200, 200, 200))
                             label_rect = label_surf.get_rect(midleft=(current_x, center_y))
                             self.layer.blit(label_surf, label_rect)
@@ -583,13 +630,25 @@ class GUI:
                         
                         # Draw Icon
                         icon_path = f"src/ui/icons/{key}.svg"
-                        try:
-                            icon = pygame.image.load(icon_path)
-                            icon = pygame.transform.scale(icon, (24, 24))
-                            icon_rect = icon.get_rect(midleft=(draw_x, center_y))
-                            self.layer.blit(icon, icon_rect)
-                        except (pygame.error, FileNotFoundError):
-                            pass # Skip icon if missing for right stats to save space/complexity
+                        
+                        # Check Cache
+                        if icon_path in self._icon_cache:
+                            icon = self._icon_cache[icon_path]
+                            if icon:
+                                icon_rect = icon.get_rect(midleft=(draw_x, center_y))
+                                self.layer.blit(icon, icon_rect)
+                        elif os.path.exists(icon_path):
+                            try:
+                                icon = pygame.image.load(icon_path)
+                                icon = pygame.transform.scale(icon, (24, 24))
+                                self._icon_cache[icon_path] = icon
+                                
+                                icon_rect = icon.get_rect(midleft=(draw_x, center_y))
+                                self.layer.blit(icon, icon_rect)
+                            except (pygame.error, FileNotFoundError):
+                                self._icon_cache[icon_path] = None
+                        else:
+                            self._icon_cache[icon_path] = None
 
                         # Draw Value
                         val_rect = val_surf.get_rect(midleft=(draw_x + 30, center_y))

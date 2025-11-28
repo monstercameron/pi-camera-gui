@@ -32,7 +32,7 @@ def generate_exif_bytes(metadata=None):
         return None
     
     try:
-        # Create a dummy image to generate EXIF structure
+        # Create a placeholder image to generate EXIF structure
         # We can't just create bytes directly easily without using Pillow's machinery
         # or we can use a minimal image.
         img = Image.new('RGB', (1, 1))
@@ -742,7 +742,7 @@ class MockCamera(CameraBase):
                 print(f"MockCamera: Webcam capture error: {e}")
         
         if data is None:
-            # Generate dummy blue image
+            # Generate placeholder blue image
             if Image:
                 img = Image.new('RGB', self.resolution, color=(100, 150, 200))
                 data = img.tobytes()
