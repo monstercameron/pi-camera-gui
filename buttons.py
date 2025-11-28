@@ -1,7 +1,9 @@
 import pygame.locals
-from gpiozero import Button
+from gpio_manager import get_button_class
 from time import sleep
 
+# Get the appropriate Button class (Real or Mock)
+Button = get_button_class()
 
 class Buttons:
     def __init__(self, settings):

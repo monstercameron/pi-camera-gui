@@ -1,14 +1,21 @@
-import picamera
+try:
+    import picamera
+except ImportError:
+    picamera = None
+
 from os import path
 from datetime import datetime
 
 
-class Camera:
+class RealCamera:
     def __init__(self, menus, settings):
+        if picamera is None:
+            raise ImportError("picamera module not found")
         self.camera = picamera.PiCamera()
         self.menus = menus
         self.settings = settings
         self.resolution = (4000, 3000)
+        self.has_hardware_overlay = True
         self.autoMode()
 
     def autoMode(self):
@@ -138,3 +145,147 @@ class Camera:
             "brightness":self.brightness,
             "resolution":self.resolutionGetSet
         }
+
+
+class MockCamera:
+    def __init__(self, menus, settings):
+        self.menus = menus
+        self.settings = settings
+        self.resolution = (4000, 3000)
+        self.has_hardware_overlay = False
+        
+        # Mock state
+        self._exposure_mode = 'auto'
+        self._shutter_speed = 0
+        self._iso = 0
+        self._awb_mode = 'auto'
+        self._sharpness = 0
+        self._image_denoise = False
+        self._image_effect = 'none'
+        self._drc_strength = 'off'
+        self._contrast = 0
+        self._saturation = 0
+        self._brightness = 50
+
+    def autoMode(self):
+        self._exposure_mode = 'auto'
+        self._shutter_speed = 0
+        self._iso = 0
+
+    def getCamera(self):
+        return None
+
+    def startPreview(self):
+        print("MockCamera: startPreview")
+
+    def stopPreview(self):
+        print("MockCamera: stopPreview")
+
+    def closeCamera(self):
+        print("MockCamera: closeCamera")
+
+    def exposure(self, value=None):
+        if value is not None:
+            self._exposure_mode = value
+            print(f"MockCamera: Set exposure to {value}")
+        return self._exposure_mode
+
+    def shutterSpeed(self, value=None):
+        if value is not None:
+            self._shutter_speed = value
+            print(f"MockCamera: Set shutter speed to {value}")
+        return self._shutter_speed
+
+    def iso(self, value=None):
+        if value is not None:
+            self._iso = value
+            print(f"MockCamera: Set ISO to {value}")
+        return self._iso
+
+    def whiteBalance(self, value=None):
+        if value is not None:
+            self._awb_mode = value
+            print(f"MockCamera: Set AWB to {value}")
+        return self._awb_mode
+
+    def sharpness(self, value=None):
+        if value is not None:
+            self._sharpness = value
+            print(f"MockCamera: Set sharpness to {value}")
+        return self._sharpness
+
+    def imgDenoise(self, value=None):
+        if value is not None:
+            self._image_denoise = value
+            print(f"MockCamera: Set denoise to {value}")
+        return self._image_denoise
+
+    def imgEffect(self, value=None):
+        if value is not None:
+            self._image_effect = value
+            print(f"MockCamera: Set effect to {value}")
+        return self._image_effect
+
+    def drcStrength(self, value=None):
+        if value is not None:
+            self._drc_strength = value
+            print(f"MockCamera: Set DRC to {value}")
+        return self._drc_strength
+
+    def contrast(self, value=None):
+        if value is not None:
+            self._contrast = value
+            print(f"MockCamera: Set contrast to {value}")
+        return self._contrast
+
+    def saturation(self, value=None):
+        if value is not None:
+            self._saturation = value
+            print(f"MockCamera: Set saturation to {value}")
+        return self._saturation
+
+    def brightness(self, value=None):
+        if value is not None:
+            self._brightness = value
+            print(f"MockCamera: Set brightness to {value}")
+        return self._brightness
+
+    def resolutionGetSet(self, value=None):
+        if value is not None:
+            strToTuple = tuple(map(int, value.split(',')))
+            self.resolution = strToTuple
+            print(f"MockCamera: Set resolution to {self.resolution}")
+        return self.resolution
+
+    def captureImage(self):
+        print(f"MockCamera: *CLICK* Image captured at {self.resolution}")
+
+    def captureVideo(self):
+        print("MockCamera: Video capture not implemented")
+
+    def controls(self, pygame, key):
+        if key == pygame.K_RETURN:
+            self.captureImage()
+
+    def directory(self):
+        return {
+            "exposure": self.exposure,
+            "shutter": self.shutterSpeed,
+            "iso": self.iso,
+            "awb": self.whiteBalance,
+            "sharpness":self.sharpness,
+            "imagedenoise":self.imgDenoise,
+            "imageeffect":self.imgEffect,
+            "dynamicrangecompression":self.drcStrength,
+            "contrast":self.contrast,
+            "saturation":self.saturation,
+            "brightness":self.brightness,
+            "resolution":self.resolutionGetSet
+        }
+
+def get_camera(menus, settings):
+    if picamera is not None:
+        return RealCamera(menus, settings)
+    else:
+        print("picamera not found, using MockCamera")
+        return MockCamera(menus, settings)

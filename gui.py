@@ -58,18 +58,21 @@ def Gui(controls, menus, settings, Buttons, camera=None):
                  settings["display"]["height"]-statsRect.height))
             pygamesScreenRaw = pygame.image.tostring(layer, 'RGBA')
 
-            if firstLoop:
-                o = camera.getCamera().add_overlay(
-                    pygamesScreenRaw,
-                    size=(settings["display"]["width"],
-                          settings["display"]["height"]),
-                    fullscreen=False,
-                    window=(110, 110, settings["display"]["width"], settings["display"]["height"]))
-                o.alpha = 255
-                o.layer = 3
-                firstLoop = not firstLoop
+            if camera.has_hardware_overlay:
+                if firstLoop:
+                    o = camera.getCamera().add_overlay(
+                        pygamesScreenRaw,
+                        size=(settings["display"]["width"],
+                            settings["display"]["height"]),
+                        fullscreen=False,
+                        window=(110, 110, settings["display"]["width"], settings["display"]["height"]))
+                    o.alpha = 255
+                    o.layer = 3
+                    firstLoop = not firstLoop
+                else:
+                    o.update(pygamesScreenRaw)
             else:
-                o.update(pygamesScreenRaw)
+                screen.blit(layer, (0, 0))
         else:
             # print(menuPositions)
             screen.blit(layer, (0, 0))
@@ -97,7 +100,7 @@ def textToRect(text):
 
 
 def menu(pygame, surface, font, menuPos, menus, settings, camera=None):
-    if camera is None:
+    if camera is None or not getattr(camera, 'has_hardware_overlay', True):
         surface.fill((255, 255, 255, 255))
     else:
         surface.fill((0, 0, 0, 0))

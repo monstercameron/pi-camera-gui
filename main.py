@@ -2,6 +2,7 @@ from settings import *
 from gui import *
 from controls import *
 from buttons import *
+from camera import get_camera
 
 
 if __name__ == '__main__':
@@ -10,12 +11,10 @@ if __name__ == '__main__':
     menus = jsonToSettings(openSettings(menusFile))
     dcimFolderChecker(settings)
 
-    if settings["mode"]["dev"]:
-        Gui(cameraControls, menus, settings, Buttons)
-    else:
-        from camera import Camera
-        Gui(cameraControls, menus, settings, Buttons,
-            camera=(Camera(menus, settings)))
+    # Initialize camera (Real or Mock based on availability)
+    camera = get_camera(menus, settings)
+    
+    Gui(cameraControls, menus, settings, Buttons, camera=camera)
 
     # save settings and menus
     saveSettings(settingsFile, settings)
