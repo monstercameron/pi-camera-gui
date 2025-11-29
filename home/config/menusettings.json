@@ -541,12 +541,6 @@
                     "value": 24
                 },
                 {
-                    "name": "gallery",
-                    "displayname": "Gallery",
-                    "type": "action",
-                    "action": "open_gallery"
-                },
-                {
                     "name": "reset_settings",
                     "displayname": "Reset Settings",
                     "type": "list",

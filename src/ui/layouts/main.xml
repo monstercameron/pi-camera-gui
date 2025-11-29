@@ -1,0 +1,358 @@
+<layout>
+    <!-- 
+        Unified Layout Configuration
+        All mode-specific layouts defined as nested <mode> elements
+        Uses CSS-like styling with @variable references from theme config
+    -->
+    
+    <style>
+        <!-- Animation definitions -->
+        <animation name="menu_transition" duration="@animation_duration" easing="ease-out" />
+        <animation name="stat_change" duration="100" easing="ease-out-cubic" />
+        <animation name="selection_fade" duration="150" easing="linear" />
+        <animation name="gallery_slide" duration="100" easing="ease-out" />
+    </style>
+
+    <!-- Default configuration (fallback) -->
+    <config>
+        <widths level_0="@level_0_width" level_1="@level_1_width" level_2="@level_2_width" collapsed="@collapsed_width" />
+        <animation duration="@animation_duration" />
+    </config>
+
+    <!-- Shared Stats Strip Template -->
+    <template id="stats_strip">
+        <container id="stats" x="0" y="88%" width="100%" height="12%" 
+                   bg_color="@stats_bg" 
+                   font_size="@font_stats" 
+                   color="@text_main"
+                   icon_size="@icon_size"
+                   spacing="@stats_spacing"
+                   padding="15"
+                   padding_right="15"
+                   selection_alpha="60"
+                   selection_border_width="1"
+                   selection_padding_x="5"
+                   selection_padding_y="3"
+                   label_color="#B4B4B4"
+                   label_truncate="3"
+                   icon_gap="5"
+                   value_transition="stat_change" />
+    </template>
+
+    <!-- ============================================ -->
+    <!-- MODE: Default -->
+    <!-- ============================================ -->
+    <mode name="default">
+        <config>
+            <widths level_0="@level_0_width" level_1="@level_1_width" level_2="@level_2_width" collapsed="@collapsed_width" />
+        </config>
+        
+        <container id="level_0" x="0" y="0" width="@level_0_width" height="100%" 
+                   orientation="vertical" 
+                   item_height="@item_height_main" 
+                   font_size="@font_main"
+                   bg_color="@menu_bg_level_0" 
+                   selected_color="@selected" 
+                   unselected_color="@unselected" 
+                   selection_bg_color="@selection_bg"
+                   padding="10"
+                   transition="menu_transition" />
+
+        <container id="level_1" x="@level_0_width" y="0" width="@level_1_width" height="100%" 
+                   orientation="vertical" 
+                   item_height="@item_height_sub" 
+                   font_size="@font_sub"
+                   bg_color="@menu_bg_level_1" 
+                   selected_color="@selected" 
+                   unselected_color="@unselected_dim" 
+                   selection_bg_color="@selection_bg"
+                   padding="10"
+                   transition="menu_transition" />
+
+        <container id="level_2" x="460" y="0" width="@level_2_width" height="100%" 
+                   orientation="vertical" 
+                   item_height="@item_height_sub" 
+                   font_size="@font_sub"
+                   bg_color="@menu_bg_level_2" 
+                   selected_color="@selected" 
+                   unselected_color="@unselected_dim" 
+                   selection_bg_color="@selection_bg"
+                   padding="10"
+                   transition="menu_transition" />
+
+        <use template="stats_strip" />
+    </mode>
+
+    <!-- ============================================ -->
+    <!-- MODE: Auto -->
+    <!-- ============================================ -->
+    <mode name="auto">
+        <config>
+            <widths level_0="200" level_1="300" level_2="260" collapsed="60" />
+        </config>
+        
+        <container id="level_0" x="0" y="0" width="200" height="100%" 
+                   orientation="vertical" 
+                   item_height="60" 
+                   font_size="@font_main"
+                   bg_color="@menu_bg_level_0" 
+                   selected_color="@selected" 
+                   unselected_color="@unselected" 
+                   selection_bg_color="@selection_bg"
+                   padding="10"
+                   transition="menu_transition" />
+
+        <container id="level_1" x="200" y="0" width="300" height="100%" 
+                   orientation="vertical" 
+                   item_height="55" 
+                   font_size="22"
+                   bg_color="#0A1A1AEE" 
+                   selected_color="@selected" 
+                   unselected_color="#CCCCCC" 
+                   selection_bg_color="#00666644"
+                   padding="12"
+                   transition="menu_transition" />
+
+        <container id="level_2" x="500" y="0" width="260" height="100%" 
+                   orientation="vertical" 
+                   item_height="50" 
+                   font_size="@font_sub"
+                   bg_color="@menu_bg_level_2" 
+                   selected_color="@selected" 
+                   unselected_color="@unselected_dim" 
+                   selection_bg_color="@selection_bg"
+                   padding="10"
+                   transition="menu_transition" />
+
+        <use template="stats_strip" />
+    </mode>
+
+    <!-- ============================================ -->
+    <!-- MODE: Manual -->
+    <!-- ============================================ -->
+    <mode name="manual">
+        <config>
+            <widths level_0="200" level_1="240" level_2="280" collapsed="60" />
+        </config>
+        
+        <container id="level_0" x="0" y="0" width="200" height="100%" 
+                   orientation="vertical" 
+                   item_height="60" 
+                   font_size="@font_main"
+                   bg_color="@menu_bg_level_0" 
+                   selected_color="@selected" 
+                   unselected_color="@unselected" 
+                   selection_bg_color="@selection_bg"
+                   padding="10"
+                   transition="menu_transition" />
+
+        <container id="level_1" x="200" y="0" width="240" height="100%" 
+                   orientation="vertical" 
+                   item_height="50" 
+                   font_size="@font_sub"
+                   bg_color="@menu_bg_level_1" 
+                   selected_color="@selected" 
+                   unselected_color="@unselected_dim" 
+                   selection_bg_color="@selection_bg"
+                   padding="10"
+                   transition="menu_transition" />
+
+        <container id="level_2" x="440" y="0" width="280" height="100%" 
+                   orientation="vertical" 
+                   item_height="50" 
+                   font_size="@font_sub"
+                   bg_color="#1A1A22DD" 
+                   selected_color="@selected" 
+                   unselected_color="@unselected_dim" 
+                   selection_bg_color="@selection_bg"
+                   padding="10"
+                   transition="menu_transition" />
+
+        <use template="stats_strip" />
+    </mode>
+
+    <!-- ============================================ -->
+    <!-- MODE: Image Settings -->
+    <!-- ============================================ -->
+    <mode name="image_settings">
+        <config>
+            <widths level_0="200" level_1="260" level_2="300" collapsed="60" />
+        </config>
+        
+        <container id="level_0" x="0" y="0" width="200" height="100%" 
+                   orientation="vertical" 
+                   item_height="60" 
+                   font_size="@font_main"
+                   bg_color="@menu_bg_level_0" 
+                   selected_color="@selected" 
+                   unselected_color="@unselected" 
+                   selection_bg_color="@selection_bg"
+                   padding="10"
+                   transition="menu_transition" />
+
+        <container id="level_1" x="200" y="0" width="260" height="100%" 
+                   orientation="vertical" 
+                   item_height="50" 
+                   font_size="@font_sub"
+                   bg_color="@menu_bg_level_1" 
+                   selected_color="@selected" 
+                   unselected_color="@unselected_dim" 
+                   selection_bg_color="@selection_bg"
+                   padding="10"
+                   transition="menu_transition" />
+
+        <container id="level_2" x="460" y="0" width="300" height="100%" 
+                   orientation="vertical" 
+                   item_height="50" 
+                   font_size="@font_sub"
+                   bg_color="@menu_bg_level_2" 
+                   selected_color="@selected" 
+                   unselected_color="@unselected_dim" 
+                   selection_bg_color="@selection_bg"
+                   padding="10"
+                   transition="menu_transition" />
+
+        <use template="stats_strip" />
+    </mode>
+
+    <!-- ============================================ -->
+    <!-- MODE: Shooting -->
+    <!-- ============================================ -->
+    <mode name="shooting">
+        <config>
+            <widths level_0="200" level_1="280" level_2="260" collapsed="60" />
+        </config>
+        
+        <container id="level_0" x="0" y="0" width="200" height="100%" 
+                   orientation="vertical" 
+                   item_height="60" 
+                   font_size="@font_main"
+                   bg_color="@menu_bg_level_0" 
+                   selected_color="@selected" 
+                   unselected_color="@unselected" 
+                   selection_bg_color="@selection_bg"
+                   padding="10"
+                   transition="menu_transition" />
+
+        <container id="level_1" x="200" y="0" width="280" height="100%" 
+                   orientation="vertical" 
+                   item_height="55" 
+                   font_size="22"
+                   bg_color="@menu_bg_level_1" 
+                   selected_color="@selected" 
+                   unselected_color="@unselected_dim" 
+                   selection_bg_color="@selection_bg"
+                   padding="10"
+                   transition="menu_transition" />
+
+        <container id="level_2" x="480" y="0" width="260" height="100%" 
+                   orientation="vertical" 
+                   item_height="50" 
+                   font_size="@font_sub"
+                   bg_color="@menu_bg_level_2" 
+                   selected_color="@selected" 
+                   unselected_color="@unselected_dim" 
+                   selection_bg_color="@selection_bg"
+                   padding="10"
+                   transition="menu_transition" />
+
+        <use template="stats_strip" />
+    </mode>
+
+    <!-- ============================================ -->
+    <!-- MODE: System -->
+    <!-- ============================================ -->
+    <mode name="system">
+        <config>
+            <widths level_0="200" level_1="260" level_2="260" collapsed="60" />
+        </config>
+        
+        <container id="level_0" x="0" y="0" width="200" height="100%" 
+                   orientation="vertical" 
+                   item_height="60" 
+                   font_size="@font_main"
+                   bg_color="@menu_bg_level_0" 
+                   selected_color="@selected" 
+                   unselected_color="@unselected" 
+                   selection_bg_color="@selection_bg"
+                   padding="10"
+                   transition="menu_transition" />
+
+        <container id="level_1" x="200" y="0" width="260" height="100%" 
+                   orientation="vertical" 
+                   item_height="55" 
+                   font_size="@font_sub"
+                   bg_color="@menu_bg_level_1" 
+                   selected_color="@selected" 
+                   unselected_color="@unselected_dim" 
+                   selection_bg_color="@selection_bg"
+                   padding="10"
+                   transition="menu_transition" />
+
+        <!-- Confirmations use red highlight for danger actions -->
+        <container id="level_2" x="460" y="0" width="260" height="100%" 
+                   orientation="vertical" 
+                   item_height="50" 
+                   font_size="@font_sub"
+                   bg_color="@menu_bg_level_2" 
+                   selected_color="#FF6666" 
+                   unselected_color="@unselected_dim" 
+                   selection_bg_color="#44000044"
+                   padding="10"
+                   transition="menu_transition" />
+
+        <use template="stats_strip" />
+    </mode>
+
+    <!-- ============================================ -->
+    <!-- MODE: Gallery -->
+    <!-- ============================================ -->
+    <mode name="gallery">
+        <config>
+            <widths level_0="60" level_1="0" level_2="0" collapsed="60" />
+            <!-- Don't auto-collapse - use back/enter to exit gallery -->
+            <behavior auto_collapse="false" />
+        </config>
+        
+        <!-- Collapsed Main Menu only -->
+        <container id="level_0" x="0" y="0" width="60" height="100%" 
+                   orientation="vertical" 
+                   item_height="60" 
+                   font_size="@font_main"
+                   bg_color="#00000088" 
+                   selected_color="@selected" 
+                   unselected_color="@unselected" 
+                   selection_bg_color="@selection_bg"
+                   padding="10"
+                   transition="menu_transition" />
+
+        <!-- Hidden panels -->
+        <container id="level_1" x="60" y="0" width="0" height="100%" 
+                   orientation="vertical" 
+                   item_height="50" 
+                   font_size="@font_sub"
+                   bg_color="@menu_bg_level_1" 
+                   selected_color="@selected" 
+                   unselected_color="@unselected_dim" 
+                   selection_bg_color="@selection_bg"
+                   padding="10" />
+
+        <container id="level_2" x="60" y="0" width="0" height="100%" 
+                   orientation="vertical" 
+                   item_height="50" 
+                   font_size="@font_sub"
+                   bg_color="@menu_bg_level_2" 
+                   selected_color="@selected" 
+                   unselected_color="@unselected_dim" 
+                   selection_bg_color="@selection_bg"
+                   padding="10" />
+
+        <!-- Gallery-specific viewer panel -->
+        <container id="gallery_viewer" x="60" y="0" width="calc(100% - 60)" height="88%"
+                   bg_color="#000000"
+                   transition="gallery_slide" />
+
+        <use template="stats_strip" />
+    </mode>
+
+</layout>

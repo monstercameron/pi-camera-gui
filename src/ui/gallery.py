@@ -55,11 +55,16 @@ class Gallery:
         except OSError:
             self.files = []
 
-    def handle_event(self, event, action=None):
+    def handle_event(self, event, action=None, auto_collapse=False):
         if not self.active: return
 
         if action == "left":
             if self.files and not self.animating:
+                # Auto-collapse: exit when at first image
+                if auto_collapse and self.current_index == 0:
+                    self.exit()
+                    return
+                # Wrap around or stay at boundary
                 new_index = (self.current_index - 1) % len(self.files)
                 if new_index != self.current_index:
                     self.target_index = new_index
@@ -68,6 +73,11 @@ class Gallery:
                     self.transition_start = pygame.time.get_ticks()
         elif action == "right":
             if self.files and not self.animating:
+                # Auto-collapse: exit when at last image
+                if auto_collapse and self.current_index == len(self.files) - 1:
+                    self.exit()
+                    return
+                # Wrap around or stay at boundary
                 new_index = (self.current_index + 1) % len(self.files)
                 if new_index != self.current_index:
                     self.target_index = new_index

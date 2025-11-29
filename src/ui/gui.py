@@ -62,11 +62,12 @@ class GUI:
         # Stats strip animation state
         self._prev_stat_values: Dict[str, Any] = {}  # Previous values for animation
         self._stat_animations: Dict[str, Dict] = {}  # {key: {start_time, old_value, new_value, direction}}
-        self._stat_anim_duration = 100  # ms
+        self._stat_anim_duration = 100  # Default, will be overridden by layout
         
         # Initialize Layout Parser
         try:
-            self.layout = LayoutParser(theme_config=settings.get("theme", {}))
+            # Pass full settings so layout can access theme colors/sizes and display.animation_duration
+            self.layout = LayoutParser(theme_config=settings)
             print("Layout parser initialized")
         except Exception as e:
             print(f"Failed to initialize layout parser: {e}")
@@ -133,7 +134,11 @@ class GUI:
 
                 # Gallery Events
                 if self.gallery.active:
-                    self.gallery.handle_event(event, action)
+                    # Load gallery layout and check behavior
+                    self.layout.load_layout("gallery")
+                    behavior = self.layout.get_behavior()
+                    auto_collapse = behavior.get("auto_collapse", True)
+                    self.gallery.handle_event(event, action, auto_collapse=auto_collapse)
                     continue
                 
                 # Toggle Menu Visibility (Enter Key)
@@ -308,7 +313,8 @@ class GUI:
         current_menu_index = self.menu_positions[0]
         if 0 <= current_menu_index < len(self.menus["menus"]):
             current_menu_name = self.menus["menus"][current_menu_index]["name"]
-            if self.layout:
+            # Don't load "gallery" layout when just hovering - it's for gallery viewer mode
+            if self.layout and current_menu_name != "gallery":
                 self.layout.load_layout(current_menu_name)
 
         # Get widths from layout config
@@ -709,23 +715,47 @@ class GUI:
         if self.layout:
             container = self.layout.get_element_by_id("stats")
             if container:
+                # Position and dimensions
                 x = self._parse_dimension(container.get("x", "0"), self.width)
                 y = self._parse_dimension(container.get("y", "0"), self.height)
                 w = self._parse_dimension(container.get("width", "100%"), self.width)
                 h = self._parse_dimension(container.get("height", "30"), self.height)
+                
+                # Colors
                 bg_color = self._parse_color(container.get("bg_color", "#00000088"))
-                font_size = int(container.get("font_size", 16))
                 color = self._parse_color(container.get("color", "#FFFFFF"))
+                label_color = self._parse_color(container.get("label_color", "#B4B4B4"))
+                
+                # Typography
+                font_size = int(container.get("font_size", 16))
+                label_truncate = int(container.get("label_truncate", 3))
+                
+                # Icons
                 icon_size = int(container.get("icon_size", 20))
+                icon_gap = int(container.get("icon_gap", 5))
+                
+                # Spacing
                 spacing = int(container.get("spacing", 15))
+                padding = int(container.get("padding", 15))
+                padding_right = int(container.get("padding_right", padding))
+                
+                # Selection styling
                 selection_alpha = int(container.get("selection_alpha", 60))
                 selection_border = int(container.get("selection_border_width", 1))
+                selection_pad_x = int(container.get("selection_padding_x", 5))
+                selection_pad_y = int(container.get("selection_padding_y", 3))
+                
+                # Animation - get from layout's named animation or use default
+                value_transition = container.get("value_transition", "stat_change")
+                if self.layout and value_transition:
+                    anim_config = self.layout.get_animation(value_transition)
+                    self._stat_anim_duration = anim_config.get('duration', 100)
                 
                 # Draw background
                 pygame.draw.rect(self.layer, bg_color, (x, y, w, h))
                 
                 # Draw stats with icons
-                current_x = x + 15
+                current_x = x + padding
                 center_y = y + h // 2
                 font = pygame.font.Font('freesansbold.ttf', font_size)
                 
@@ -798,10 +828,10 @@ class GUI:
                         # Calculate icon width
                         icon = self._load_icon(key, icon_size)
                         if icon:
-                            temp_x += icon_size + 5
+                            temp_x += icon_size + icon_gap
                         else:
-                            label_surf = font.render(key[:3].upper(), True, (180, 180, 180))
-                            temp_x += label_surf.get_width() + 5
+                            label_surf = font.render(key[:label_truncate].upper(), True, label_color)
+                            temp_x += label_surf.get_width() + icon_gap
                         
                         # Calculate value width
                         val_surf = font.render(value, True, color)
@@ -831,10 +861,10 @@ class GUI:
                     # Draw selection box FIRST (behind content)
                     if is_selected:
                         selection_rect = pygame.Rect(
-                            stat["start_x"] - 5, 
-                            y + 3, 
-                            (stat["end_x"] - stat["start_x"]) + 10, 
-                            h - 6
+                            stat["start_x"] - selection_pad_x, 
+                            y + selection_pad_y, 
+                            (stat["end_x"] - stat["start_x"]) + (selection_pad_x * 2), 
+                            h - (selection_pad_y * 2)
                         )
                         # Draw subtle dark background highlight (not white which washes out)
                         stat_color = stat["color"] if len(stat["color"]) >= 3 else (0, 255, 255)
@@ -874,12 +904,12 @@ class GUI:
                         if stat["icon"]:
                             icon_rect = stat["icon"].get_rect(midleft=(render_x, center_y))
                             self.layer.blit(stat["icon"], icon_rect)
-                            render_x += icon_size + 5
+                            render_x += icon_size + icon_gap
                         else:
-                            label_surf = font.render(stat["key"][:3].upper(), True, (180, 180, 180))
+                            label_surf = font.render(stat["key"][:label_truncate].upper(), True, label_color)
                             label_rect = label_surf.get_rect(midleft=(render_x, center_y))
                             self.layer.blit(label_surf, label_rect)
-                            render_x += label_surf.get_width() + 5
+                            render_x += label_surf.get_width() + icon_gap
                         
                         # Draw value (with animation if active)
                         if anim and anim_progress > 0:
@@ -894,7 +924,7 @@ class GUI:
                             self.layer.blit(val_surf, val_rect)
 
                 # Render Right Stats (Right Justified)
-                current_x = x + w - 15
+                current_x = x + w - padding_right
                 for key in reversed(right_stats):
                     if key in directory:
                         value = self._format_stat_value(key, directory[key]())
@@ -903,7 +933,7 @@ class GUI:
                         val_surf = font.render(value, True, color)
                         val_width = val_surf.get_width()
                         
-                        icon_width = icon_size + 5
+                        icon_width = icon_size + icon_gap
                         
                         # Position: [Icon] [Value] | <-- current_x
                         item_width = icon_width + val_width
