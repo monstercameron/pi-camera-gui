@@ -86,9 +86,19 @@ class GUI:
             # Apply startup config from XML
             startup_config = self.layout.get_startup_config()
             self.settings["display"]["showmenu"] = startup_config.get('show_menu', False)
+            
+            # Splash screen state
+            self._splash_duration = startup_config.get('splash_duration', 2000)
+            self._splash_fade = startup_config.get('splash_fade', 500)
         except Exception as e:
             print(f"Failed to initialize layout parser: {e}")
             self.layout = None
+            self._splash_duration = 2000
+            self._splash_fade = 500
+        
+        # Splash screen timing
+        self._splash_start_time = 0
+        self._splash_active = True
 
     def run(self, controls_callback: Callable, buttons_class: Any):
         # Check video driver
@@ -105,15 +115,9 @@ class GUI:
                     except OSError:
                         pass
 
-        # Initial draw to show window immediately
-        self.screen.fill((0, 0, 0))
-        try:
-            loading_font = pygame.font.Font('freesansbold.ttf', 24)
-            text = loading_font.render("Initializing Camera...", True, (255, 255, 255))
-            text_rect = text.get_rect(center=(self.width // 2, self.height // 2))
-            self.screen.blit(text, text_rect)
-        except Exception:
-            pass # Font might fail if not found, ignore for loading screen
+        # Initial draw to show splash screen immediately
+        self._splash_start_time = pygame.time.get_ticks()
+        self._render_splash_screen(1.0)  # Full opacity
         pygame.display.flip()
 
         if self.camera:
@@ -228,6 +232,28 @@ class GUI:
                 # Clear highlight animations on level change to prevent ghosting
                 self._highlight_animations.clear()
                 self._prev_selection_indices.clear()
+
+            # Handle Splash Screen
+            if self._splash_active:
+                now = pygame.time.get_ticks()
+                elapsed = now - self._splash_start_time
+                total_duration = self._splash_duration + self._splash_fade
+                
+                if elapsed >= total_duration:
+                    # Splash complete
+                    self._splash_active = False
+                else:
+                    # Calculate opacity for fade out
+                    if elapsed < self._splash_duration:
+                        opacity = 1.0
+                    else:
+                        fade_elapsed = elapsed - self._splash_duration
+                        opacity = 1.0 - (fade_elapsed / self._splash_fade)
+                    
+                    self._render_splash_screen(opacity)
+                    pygame.display.flip()
+                    self.clock.tick(self.settings["display"]["refreshrate"])
+                    continue  # Skip normal rendering during splash
 
             # Render Gallery
             if self.gallery.active:
@@ -778,6 +804,80 @@ class GUI:
         elif len(hex_string) == 8:
             return tuple(int(hex_string[i:i+2], 16) for i in (0, 2, 4, 6))
         return (255, 255, 255)
+
+    def _render_splash_screen(self, opacity: float = 1.0):
+        """Render the splash screen with logo and text."""
+        # Background
+        bg_color = (10, 10, 18)  # #0A0A12
+        self.screen.fill(bg_color)
+        
+        center_x = self.width // 2
+        center_y = self.height // 2
+        
+        # Load and render logo
+        logo_path = "src/ui/icons/logo.svg"
+        logo_size = 96
+        logo_y = int(self.height * 0.35)
+        
+        if logo_path not in self._icon_cache:
+            if os.path.exists(logo_path):
+                try:
+                    logo = pygame.image.load(logo_path)
+                    logo = pygame.transform.scale(logo, (logo_size, logo_size))
+                    self._icon_cache[logo_path] = logo
+                except Exception as e:
+                    print(f"Failed to load splash logo: {e}")
+                    self._icon_cache[logo_path] = None
+            else:
+                self._icon_cache[logo_path] = None
+        
+        logo = self._icon_cache.get(logo_path)
+        if logo:
+            logo_rect = logo.get_rect(center=(center_x, logo_y))
+            # Apply opacity if fading
+            if opacity < 1.0:
+                logo = logo.copy()
+                logo.set_alpha(int(255 * opacity))
+            self.screen.blit(logo, logo_rect)
+        
+        # Title: "Pi Camera GUI"
+        try:
+            title_font = pygame.font.Font('freesansbold.ttf', 28)
+            subtitle_font = pygame.font.Font('freesansbold.ttf', 14)
+            version_font = pygame.font.Font('freesansbold.ttf', 12)
+        except:
+            title_font = pygame.font.Font(None, 28)
+            subtitle_font = pygame.font.Font(None, 14)
+            version_font = pygame.font.Font(None, 12)
+        
+        # Title color: Cyan (#00FFFF)
+        title_color = (0, 255, 255)
+        subtitle_color = (102, 102, 102)  # #666666
+        version_color = (68, 68, 68)  # #444444
+        
+        # Apply opacity
+        if opacity < 1.0:
+            title_color = tuple(int(c * opacity) for c in title_color)
+            subtitle_color = tuple(int(c * opacity) for c in subtitle_color)
+            version_color = tuple(int(c * opacity) for c in version_color)
+        
+        # Title
+        title_y = int(self.height * 0.58)
+        title_surf = title_font.render("Pi Camera GUI", True, title_color)
+        title_rect = title_surf.get_rect(center=(center_x, title_y))
+        self.screen.blit(title_surf, title_rect)
+        
+        # Subtitle
+        subtitle_y = int(self.height * 0.68)
+        subtitle_surf = subtitle_font.render("Snap. Tweak. Create.", True, subtitle_color)
+        subtitle_rect = subtitle_surf.get_rect(center=(center_x, subtitle_y))
+        self.screen.blit(subtitle_surf, subtitle_rect)
+        
+        # Version
+        version_y = int(self.height * 0.90)
+        version_surf = version_font.render("v1.0", True, version_color)
+        version_rect = version_surf.get_rect(center=(center_x, version_y))
+        self.screen.blit(version_surf, version_rect)
 
     def _render_overlay(self, overlay_name: str, data: Dict[str, Any] = None):
         """Render an overlay using XML config."""

@@ -1,0 +1,79 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128">
+  <!-- Pi Camera GUI Logo -->
+  <!-- A fun, stylized camera with Raspberry Pi vibes -->
+  
+  <!-- Camera Body - Rounded rectangle with gradient -->
+  <defs>
+    <linearGradient id="bodyGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" style="stop-color:#3A3A4A"/>
+      <stop offset="100%" style="stop-color:#2A2A3A"/>
+    </linearGradient>
+    <linearGradient id="lensGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#00FFFF"/>
+      <stop offset="50%" style="stop-color:#0088AA"/>
+      <stop offset="100%" style="stop-color:#004466"/>
+    </linearGradient>
+    <linearGradient id="piGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" style="stop-color:#C51A4A"/>
+      <stop offset="100%" style="stop-color:#8B1538"/>
+    </linearGradient>
+  </defs>
+  
+  <!-- Camera Body -->
+  <rect x="16" y="32" width="96" height="72" rx="12" ry="12" fill="url(#bodyGrad)" stroke="#4A4A5A" stroke-width="2"/>
+  
+  <!-- Viewfinder bump -->
+  <rect x="24" y="24" width="28" height="12" rx="4" ry="4" fill="#2A2A3A" stroke="#4A4A5A" stroke-width="1"/>
+  
+  <!-- Flash -->
+  <rect x="80" y="26" width="24" height="10" rx="3" ry="3" fill="#FFD700" opacity="0.9"/>
+  <rect x="82" y="28" width="20" height="6" rx="2" ry="2" fill="#FFF8DC" opacity="0.6"/>
+  
+  <!-- Main Lens - Outer Ring -->
+  <circle cx="64" cy="68" r="28" fill="#1A1A2A" stroke="#5A5A6A" stroke-width="3"/>
+  
+  <!-- Lens Glass - Cyan gradient (Pi Camera signature) -->
+  <circle cx="64" cy="68" r="22" fill="url(#lensGrad)"/>
+  
+  <!-- Lens Inner Ring -->
+  <circle cx="64" cy="68" r="16" fill="#001A22" stroke="#00AACC" stroke-width="1"/>
+  
+  <!-- Lens Reflection -->
+  <ellipse cx="58" cy="62" rx="6" ry="4" fill="#FFFFFF" opacity="0.3"/>
+  <circle cx="70" cy="74" r="3" fill="#FFFFFF" opacity="0.15"/>
+  
+  <!-- Aperture Blades hint -->
+  <circle cx="64" cy="68" r="10" fill="none" stroke="#003344" stroke-width="1" stroke-dasharray="4 2"/>
+  
+  <!-- Raspberry Pi Logo Element - Stylized leaf/berry -->
+  <g transform="translate(88, 36)">
+    <!-- Small Pi berry -->
+    <circle cx="8" cy="8" r="6" fill="url(#piGrad)"/>
+    <circle cx="8" cy="6" r="1.5" fill="#FF6B8A" opacity="0.6"/>
+    <!-- Leaf -->
+    <path d="M8 2 Q12 -2 14 2 Q12 4 8 2" fill="#2D8B2D"/>
+  </g>
+  
+  <!-- Shutter Button -->
+  <circle cx="100" cy="44" r="8" fill="#4A4A5A" stroke="#5A5A6A" stroke-width="2"/>
+  <circle cx="100" cy="44" r="5" fill="#FF4444"/>
+  <circle cx="98" cy="42" r="2" fill="#FF8888" opacity="0.5"/>
+  
+  <!-- Mode Dial -->
+  <circle cx="32" cy="44" r="6" fill="#3A3A4A" stroke="#6A6A7A" stroke-width="1"/>
+  <line x1="32" y1="38" x2="32" y2="41" stroke="#00FFFF" stroke-width="2" stroke-linecap="round"/>
+  
+  <!-- Bottom grip texture -->
+  <g opacity="0.3">
+    <line x1="24" y1="96" x2="24" y2="100" stroke="#6A6A7A" stroke-width="2"/>
+    <line x1="32" y1="96" x2="32" y2="100" stroke="#6A6A7A" stroke-width="2"/>
+    <line x1="40" y1="96" x2="40" y2="100" stroke="#6A6A7A" stroke-width="2"/>
+    <line x1="88" y1="96" x2="88" y2="100" stroke="#6A6A7A" stroke-width="2"/>
+    <line x1="96" y1="96" x2="96" y2="100" stroke="#6A6A7A" stroke-width="2"/>
+    <line x1="104" y1="96" x2="104" y2="100" stroke="#6A6A7A" stroke-width="2"/>
+  </g>
+  
+  <!-- Status LED -->
+  <circle cx="20" cy="68" r="3" fill="#00FF00" opacity="0.8"/>
+  <circle cx="20" cy="68" r="2" fill="#88FF88"/>
+</svg>

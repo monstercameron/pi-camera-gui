@@ -123,6 +123,7 @@
         <animation name="collapse" duration="@animation_duration" easing="ease-in-out" />
         <animation name="expand" duration="@animation_duration" easing="ease-out" />
         <animation name="quick_change_debounce" duration="100" easing="linear" />
+        <animation name="splash_fade" duration="500" easing="ease-out" />
         
         <!-- Text styles -->
         <text name="menu_title" font_size="@font_main" color="@text_main" bold="true" />
@@ -135,6 +136,8 @@
         <text name="stat_label" font_size="@font_stats" color="#B4B4B4" truncate="3" />
         <text name="stat_value" font_size="@font_stats" color="@text_main" />
         <text name="loading" font_size="24" color="#FFFFFF" align="center" />
+        <text name="splash_title" font_size="28" color="#00FFFF" align="center" bold="true" />
+        <text name="splash_subtitle" font_size="14" color="#888888" align="center" />
         <text name="countdown" font_size="120" color="#FFFFFF" align="center" shadow_color="#000000" shadow_offset="4" />
         <text name="timelapse_status" font_size="10" color="#FF3232" />
         <text name="group_header" font_size="@font_sub" color="@selected" bold="true" />
@@ -185,6 +188,8 @@
         <startup>
             <show_stats>true</show_stats>
             <show_menu>false</show_menu>
+            <splash_duration>2000</splash_duration>
+            <splash_fade>500</splash_fade>
         </startup>
         
         <!-- Icon configuration -->
@@ -478,6 +483,23 @@
                  x="50%" y="50%" font_size="24" color="#FFFFFF" centered="true">
             <container x="0" y="0" width="100%" height="100%" bg_color="#000000">
                 <text content="Initializing Camera..." style="loading" x="center" y="center" />
+            </container>
+        </overlay>
+        
+        <!-- Splash Screen Overlay -->
+        <overlay id="splash_screen" visible_when="splash_active" duration="2000" fade_out="500">
+            <container id="splash_bg" x="0" y="0" width="100%" height="100%" bg_color="#0A0A12" />
+            <container id="splash_logo" x="50%" y="40%" width="96" height="96" centered="true">
+                <icon src="src/ui/icons/logo.svg" size="96" />
+            </container>
+            <container id="splash_title" x="50%" y="62%" centered="true">
+                <text content="Pi Camera GUI" style="splash_title" font_size="28" color="#00FFFF" />
+            </container>
+            <container id="splash_subtitle" x="50%" y="72%" centered="true">
+                <text content="📸 Snap. Tweak. Create." style="splash_subtitle" font_size="14" color="#666666" />
+            </container>
+            <container id="splash_version" x="50%" y="90%" centered="true">
+                <text content="v1.0" style="splash_subtitle" font_size="12" color="#444444" />
             </container>
         </overlay>
     </overlays>

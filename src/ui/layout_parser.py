@@ -479,7 +479,9 @@ class LayoutParser:
             },
             'startup': {
                 'show_stats': True,
-                'show_menu': False
+                'show_menu': False,
+                'splash_duration': 2000,
+                'splash_fade': 500
             }
         }
         
@@ -544,6 +546,12 @@ class LayoutParser:
             show_menu = startup_elem.find('show_menu')
             if show_menu is not None and show_menu.text:
                 self._global_config['startup']['show_menu'] = show_menu.text.lower() == 'true'
+            splash_duration = startup_elem.find('splash_duration')
+            if splash_duration is not None and splash_duration.text:
+                self._global_config['startup']['splash_duration'] = int(splash_duration.text)
+            splash_fade = startup_elem.find('splash_fade')
+            if splash_fade is not None and splash_fade.text:
+                self._global_config['startup']['splash_fade'] = int(splash_fade.text)
         
         # Parse formatters
         formatters_elem = config_elem.find('formatters')
