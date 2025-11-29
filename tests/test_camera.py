@@ -66,7 +66,7 @@ class TestCameraBase(unittest.TestCase):
 class TestMockCamera(unittest.TestCase):
     def setUp(self):
         self.settings = {
-            "files": {"path": "tmp", "template": "{}"},
+            "files": {"path": "tmp", "template": "{}_{}"},
             "display": {"width": 100, "height": 100}
         }
         self.camera = MockCamera({}, self.settings)
@@ -81,13 +81,13 @@ class TestMockCamera(unittest.TestCase):
         self.assertEqual(self.camera.resolution, (1920, 1080))
 
     def test_capture_calls_encoder(self):
-        # Mock the thread pool
-        self.camera.encoder_pool = MagicMock()
+        # Mock the queue manager
+        self.camera.queue_manager = MagicMock()
         
         self.camera.captureImage()
         
-        # Verify submit was called
-        self.assertTrue(self.camera.encoder_pool.submit.called)
+        # Verify add_encoding_job was called
+        self.assertTrue(self.camera.queue_manager.add_encoding_job.called)
 
 if __name__ == '__main__':
     unittest.main()

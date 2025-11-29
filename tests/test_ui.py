@@ -78,6 +78,12 @@ class TestMenuController(unittest.TestCase):
         MenuController._handle_vertical_input(-1, self.menu_pos, self.menus, self.camera)
         self.assertEqual(self.menu_pos[2], 1)
         
+        # Value should NOT update yet (requires Enter)
+        self.assertEqual(self.menus["menus"][0]["options"][0]["value"], "val1")
+        
+        # Press Enter to select
+        MenuController._handle_enter(self.menu_pos, self.menus, self.camera)
+        
         # Check if value updated in menu structure
         self.assertEqual(self.menus["menus"][0]["options"][0]["value"], "val2")
         
@@ -101,26 +107,28 @@ class TestMenuController(unittest.TestCase):
     def test_quick_value_change(self):
         # Setup menus with standard stats
         self.menus["menus"][0]["options"].extend([
+            {"name": "mode", "type": "list", "value": "single", "options": ["single", "timer"]},
             {"name": "iso", "type": "list", "value": 100, "options": [100, 200, 400]},
             {"name": "shutter", "type": "range", "value": 10, "options": {"min": 0, "max": 100, "step": 10}}
         ])
         
         # Update camera mock to include these settings
         self.camera.directory.return_value.update({
+            "mode": MagicMock(),
             "iso": MagicMock(),
             "shutter": MagicMock()
         })
         
-        # ISO is index 0 in quick stats (iso, shutter, awb, exposure)
+        # ISO is index 1 in quick stats (mode, iso, shutter, awb, exposure)
         # Increase ISO (UP)
-        MenuController._handle_quick_value_change(1, 0, self.menus, self.camera)
-        self.assertEqual(self.menus["menus"][0]["options"][2]["value"], 200)
+        MenuController._handle_quick_value_change(1, 1, self.menus, self.camera)
+        self.assertEqual(self.menus["menus"][0]["options"][3]["value"], 200)
         self.camera.directory.return_value["iso"].assert_called_with(value=200)
         
-        # Shutter is index 1
+        # Shutter is index 2
         # Increase Shutter (UP)
-        MenuController._handle_quick_value_change(1, 1, self.menus, self.camera)
-        self.assertEqual(self.menus["menus"][0]["options"][3]["value"], 20)
+        MenuController._handle_quick_value_change(1, 2, self.menus, self.camera)
+        self.assertEqual(self.menus["menus"][0]["options"][4]["value"], 20)
         self.camera.directory.return_value["shutter"].assert_called_with(value=20)
 
     def test_apply_setting_reset(self):

@@ -457,72 +457,10 @@
             ]
         },
         {
-            "name": "shooting",
-            "displayname": "Shooting",
-            "type": "list",
-            "options": [
-                {
-                    "name": "timer",
-                    "displayname": "Self Timer",
-                    "type": "list",
-                    "options": [
-                        {"value": 0, "displayname": "Off"},
-                        {"value": 2, "displayname": "2s"},
-                        {"value": 5, "displayname": "5s"},
-                        {"value": 10, "displayname": "10s"}
-                    ],
-                    "value": 0
-                },
-                {
-                    "name": "timelapse_interval",
-                    "displayname": "Timelapse Interval",
-                    "type": "list",
-                    "options": [
-                        {"value": 0, "displayname": "Off"},
-                        {"value": 2, "displayname": "2s"},
-                        {"value": 5, "displayname": "5s"},
-                        {"value": 10, "displayname": "10s"},
-                        {"value": 30, "displayname": "30s"},
-                        {"value": 60, "displayname": "1m"}
-                    ],
-                    "value": 0
-                },
-                {
-                    "name": "timelapse_duration",
-                    "displayname": "Timelapse Duration",
-                    "type": "list",
-                    "options": [
-                        {"value": 0, "displayname": "Infinite"},
-                        {"value": 5, "displayname": "5m"},
-                        {"value": 10, "displayname": "10m"},
-                        {"value": 30, "displayname": "30m"},
-                        {"value": 60, "displayname": "1h"}
-                    ],
-                    "value": 0
-                }
-            ]
-        },
-        {
             "name": "system",
             "displayname": "System",
             "type": "list",
             "options": [
-                {
-                    "name": "open_gallery",
-                    "displayname": "Gallery",
-                    "type": "list",
-                    "options": [
-                        {
-                            "value": "no",
-                            "displayname": "Cancel"
-                        },
-                        {
-                            "value": "yes",
-                            "displayname": "Open Gallery"
-                        }
-                    ],
-                    "value": "no"
-                },
                 {
                     "name": "reset_settings",
                     "displayname": "Reset Settings",
@@ -540,12 +478,6 @@
                     "value": "no"
                 }
             ]
-        },
-        {
-            "name": "gallery",
-            "displayname": "Gallery",
-            "type": "action",
-            "options": []
         }
     ]
 }

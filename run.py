@@ -78,12 +78,14 @@ if __name__ == '__main__':
     
     # Define callbacks
     callbacks = {
-        "reset": lambda: settings_manager.reset()
+        "reset": lambda: settings_manager.reset(),
+        "open_gallery": lambda: gui.gallery.enter(),
+        "close_menu": lambda: settings["display"].update({"showmenu": False})
     }
 
     # Wrap handle_event to include callbacks
-    def controls_handler(pygame_mod, event, menu_pos, menus, camera=None, menu_active=True, quick_menu_pos=None):
-        MenuController.handle_event(pygame_mod, event, menu_pos, menus, camera, menu_active, quick_menu_pos, callbacks)
+    def controls_handler(pygame_mod, event, menu_pos, menus, camera=None, menu_active=True, quick_menu_pos=None, action=None):
+        MenuController.handle_event(pygame_mod, event, menu_pos, menus, camera, menu_active, quick_menu_pos, callbacks, action)
     
     try:
         print("Starting GUI...")

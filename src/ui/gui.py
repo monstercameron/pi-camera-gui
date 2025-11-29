@@ -4,6 +4,7 @@ import os
 from typing import Dict, Any, List, Optional, Callable
 
 from src.ui.layout_parser import LayoutParser
+from src.ui.gallery import Gallery
 
 class GUI:
     def __init__(self, settings: Dict[str, Any], menus: Dict[str, Any], camera: Optional[Any] = None):
@@ -14,6 +15,9 @@ class GUI:
         self.quick_menu_pos = [0] # Selected index for quick stats menu
         
         pygame.init()
+        
+        self.gallery = Gallery(settings)
+        
         self.width = settings["display"]["width"]
         self.height = settings["display"]["height"]
         
@@ -36,6 +40,16 @@ class GUI:
         # Flash Effect State
         self.flash_start_time = 0
         self.flash_duration = 25 # ms
+
+        # Timer & Timelapse State
+        self.timer_active = False
+        self.timer_start_time = 0
+        self.timer_duration = 0
+        
+        self.timelapse_active = False
+        self.next_capture_time = 0
+        self.timelapse_end_time = 0
+        self.timelapse_count = 0
 
         # Enable key repeat for fast scrolling (delay=300ms, interval=50ms)
         pygame.key.set_repeat(300, 50)
@@ -106,20 +120,76 @@ class GUI:
                 if event.type == pygame.QUIT:
                     self.running = False
                 
-                # Toggle Menu Visibility (Dev / Menu Key)
-                if event.type == pygame.KEYDOWN and event.key == pygame.K_RETURN:
-                    self.settings["display"]["showmenu"] = not self.settings["display"]["showmenu"]
-                    continue # Consume event to prevent capture/other actions
+                action = self._get_action_from_event(event)
 
-                # Take Photo (Space Bar)
-                if event.type == pygame.KEYDOWN and event.key == pygame.K_SPACE:
+                if action == "quit":
+                    self.running = False
+                    continue
+
+                # Gallery Events
+                if self.gallery.active:
+                    self.gallery.handle_event(event, action)
+                    continue
+                
+                # Toggle Menu Visibility (Enter Key)
+                if action == "enter":
+                    if not self.settings["display"]["showmenu"]:
+                        self.settings["display"]["showmenu"] = True
+                        continue
+                    # If menu is active, pass Enter to controls for selection
+
+                # Take Photo (Shutter)
+                if action == "shutter":
                     if self.camera:
-                        self.camera.captureImage()
-                        self.flash_start_time = pygame.time.get_ticks()
+                        # Cancel active modes
+                        if self.timer_active:
+                            self.timer_active = False
+                            print("Timer cancelled")
+                            continue
+                        if self.timelapse_active:
+                            self.timelapse_active = False
+                            if hasattr(self.camera, 'stop_timelapse_session'):
+                                self.camera.stop_timelapse_session()
+                            print("Timelapse cancelled")
+                            continue
+
+                        # Check settings
+                        timer_delay = 0
+                        if hasattr(self.camera, 'timer'):
+                            timer_delay = self.camera.timer()
+                        
+                        timelapse_interval = 0
+                        if hasattr(self.camera, 'timelapse_interval'):
+                            timelapse_interval = self.camera.timelapse_interval()
+
+                        if timer_delay > 0:
+                            self.timer_active = True
+                            self.timer_duration = timer_delay
+                            self.timer_start_time = pygame.time.get_ticks()
+                        elif timelapse_interval > 0:
+                            self.timelapse_active = True
+                            self.timelapse_count = 0
+                            self.next_capture_time = pygame.time.get_ticks()
+                            
+                            # Start Session
+                            if hasattr(self.camera, 'start_timelapse_session'):
+                                self.camera.start_timelapse_session()
+                            
+                            duration = 0
+                            if hasattr(self.camera, 'timelapse_duration'):
+                                duration = self.camera.timelapse_duration()
+                            
+                            if duration > 0:
+                                self.timelapse_end_time = pygame.time.get_ticks() + (duration * 60 * 1000)
+                            else:
+                                self.timelapse_end_time = 0
+                        else:
+                            self.camera.captureImage()
+                            self.flash_start_time = pygame.time.get_ticks()
                     continue
 
                 # Pass event to controls
-                controls_callback(pygame, event, self.menu_positions, self.menus, camera=self.camera, menu_active=self.settings["display"]["showmenu"], quick_menu_pos=self.quick_menu_pos)
+                controls_callback(pygame, event, self.menu_positions, self.menus, camera=self.camera, menu_active=self.settings["display"]["showmenu"], quick_menu_pos=self.quick_menu_pos, action=action)
 
             # Detect Level Change for Animation
             current_level = self.menu_positions[3]
@@ -128,6 +198,13 @@ class GUI:
                 self.transition_to = current_level
                 self.transition_start = pygame.time.get_ticks()
                 self.last_level = current_level
+
+            # Render Gallery
+            if self.gallery.active:
+                self.gallery.render(self.screen)
+                pygame.display.flip()
+                self.clock.tick(30)
+                continue
 
             # Render Menu
             if self.settings["display"]["showmenu"]:
@@ -142,6 +219,75 @@ class GUI:
             # Render Flash Effect
             if pygame.time.get_ticks() - self.flash_start_time < self.flash_duration:
                 self.screen.fill((255, 255, 255))
+
+            # Handle Timer Logic & Rendering
+            if self.timer_active:
+                now = pygame.time.get_ticks()
+                elapsed = (now - self.timer_start_time) / 1000.0
+                remaining = self.timer_duration - elapsed
+                
+                if remaining <= 0:
+                    self.camera.captureImage()
+                    self.flash_start_time = pygame.time.get_ticks()
+                    self.timer_active = False
+                    
+                    # Check for chained timelapse
+                    timelapse_interval = 0
+                    if hasattr(self.camera, 'timelapse_interval'):
+                        timelapse_interval = self.camera.timelapse_interval()
+                        
+                    if timelapse_interval > 0:
+                        self.timelapse_active = True
+                        self.timelapse_count = 1
+                        self.next_capture_time = pygame.time.get_ticks() + (timelapse_interval * 1000)
+                        
+                        # Start Session
+                        if hasattr(self.camera, 'start_timelapse_session'):
+                            self.camera.start_timelapse_session()
+                        
+                        duration = 0
+                        if hasattr(self.camera, 'timelapse_duration'):
+                            duration = self.camera.timelapse_duration()
+                        
+                        if duration > 0:
+                            self.timelapse_end_time = pygame.time.get_ticks() + (duration * 60 * 1000)
+                        else:
+                            self.timelapse_end_time = 0
+                else:
+                    # Render Countdown
+                    count_text = str(int(remaining) + 1)
+                    # Big Font
+                    big_font = pygame.font.Font('freesansbold.ttf', 120)
+                    text_surf = big_font.render(count_text, True, (255, 255, 255))
+                    text_rect = text_surf.get_rect(center=(self.width // 2, self.height // 2))
+                    
+                    # Shadow
+                    shadow_surf = big_font.render(count_text, True, (0, 0, 0))
+                    shadow_rect = shadow_surf.get_rect(center=(self.width // 2 + 4, self.height // 2 + 4))
+                    
+                    self.screen.blit(shadow_surf, shadow_rect)
+                    self.screen.blit(text_surf, text_rect)
+
+            # Handle Timelapse Logic & Rendering
+            if self.timelapse_active:
+                now = pygame.time.get_ticks()
+                if now >= self.next_capture_time:
+                    self.camera.captureImage()
+                    self.flash_start_time = pygame.time.get_ticks()
+                    self.timelapse_count += 1
+                    
+                    interval = self.camera.timelapse_interval()
+                    self.next_capture_time = now + (interval * 1000)
+                    
+                    if self.timelapse_end_time > 0 and now >= self.timelapse_end_time:
+                        self.timelapse_active = False
+                        if hasattr(self.camera, 'stop_timelapse_session'):
+                            self.camera.stop_timelapse_session()
+                
+                # Render Timelapse Status Icon/Text
+                status_text = f"TL: {self.timelapse_count}"
+                tl_surf = self.stats_font.render(status_text, True, (255, 50, 50))
+                self.screen.blit(tl_surf, (10, 10))
 
             pygame.display.flip()
             self.clock.tick(self.settings["display"]["refreshrate"])
@@ -552,7 +698,7 @@ class GUI:
                 font = pygame.font.Font('freesansbold.ttf', font_size)
                 
                 # Define priority stats to show
-                left_stats = ["iso", "shutter", "awb", "exposure"]
+                left_stats = ["mode", "iso", "shutter", "awb", "exposure"]
                 right_stats = ["resolution", "filesize", "remaining"]
                 
                 # Render Left Stats
@@ -674,6 +820,23 @@ class GUI:
         if font is None:
             font = self.font
         return font.render(str(text).upper(), False, fg, bg)
+
+    def _get_action_from_event(self, event):
+        if event.type != pygame.KEYDOWN:
+            return None
+            
+        controls = self.settings.get("controls", {})
+        for action, config in controls.items():
+            key_name = config.get("key")
+            # Resolve key
+            if isinstance(key_name, int):
+                target_key = key_name
+            else:
+                target_key = getattr(pygame, key_name, None)
+                
+            if event.key == target_key:
+                return action
+        return None
 
     def _cleanup(self):
         if self.camera:

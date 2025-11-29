@@ -11,10 +11,10 @@ from src.hardware.buttons import Buttons, MockButton
 class TestButtons(unittest.TestCase):
     def setUp(self):
         self.settings = {
-            "buttons": [
-                {"name": "btn1", "gpio": 17, "description": "Test Button 1", "event": 1},
-                {"name": "btn2", "gpio": 27, "description": "Test Button 2", "event": 2}
-            ]
+            "controls": {
+                "btn1": {"key": 1, "pin": 17},
+                "btn2": {"key": 2, "pin": 27}
+            }
         }
 
     def test_initialization(self):

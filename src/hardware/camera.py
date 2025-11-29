@@ -339,6 +339,17 @@ class CameraBase(ABC):
         self.image_format: str = "jpeg"
         self.image_quality: int = 85
         
+        # Shooting Modes
+        self._timer: int = 0
+        self._timelapse_interval: int = 0
+        self._timelapse_duration: int = 0
+        self._timelapse_folder: Optional[str] = None
+        self._timelapse_counter: int = 0
+        
+        # File Counter
+        self._file_counter: int = 0
+        self._initialized_counter: bool = False
+        
         # Resumable Queue
         # Stores raw captures to disk to survive power loss
         queue_path = os.path.join("home", "cache")
@@ -417,31 +428,59 @@ class CameraBase(ABC):
         except Exception:
             return "0"
 
-    def _get_next_filename(self, extension):
-        date_and_time = datetime.now().strftime('%Y-%m-%d')
-        file_number = 1
-        file_path = self.settings["files"]["path"]
-        template = self.settings["files"]["template"]
+    def start_timelapse_session(self):
+        # Create a folder for the timelapse
+        date_str = datetime.now().strftime('%Y%m%d_%H%M%S')
+        folder_name = f"timelapse_{date_str}"
+        base_path = self.settings["files"]["path"]
+        self._timelapse_folder = os.path.join(base_path, folder_name)
+        self._timelapse_counter = 0
         
-        # List of extensions to check for continuity
+        if not os.path.exists(self._timelapse_folder):
+            os.makedirs(self._timelapse_folder)
+        print(f"Started timelapse session: {self._timelapse_folder}")
+
+    def stop_timelapse_session(self):
+        self._timelapse_folder = None
+        print("Stopped timelapse session")
+
+    def _initialize_file_counter(self, file_path, template):
+        date_and_time = datetime.now().strftime('%Y-%m-%d')
         checked_extensions = ['jpg', 'jpeg', 'png', 'bmp', 'gif', 'webp']
         
+        n = 1
         while True:
-            # Check if this file number exists with ANY extension
             exists = False
             for ext in checked_extensions:
-                check_name = f'{file_path}/{template.format(date_and_time, str(file_number))}.{ext}'
+                check_name = f'{file_path}/{template.format(date_and_time, str(n))}.{ext}'
                 if path.exists(check_name):
                     exists = True
                     break
-            
             if exists:
-                file_number += 1
+                n += 1
             else:
-                # Found a free number
                 break
-                
-        return f'{file_path}/{template.format(date_and_time, str(file_number))}.{extension}'
+        
+        self._file_counter = n - 1
+        self._initialized_counter = True
+        print(f"Initialized file counter to {self._file_counter}")
+
+    def _get_next_filename(self, extension):
+        date_and_time = datetime.now().strftime('%Y-%m-%d')
+        template = self.settings["files"]["template"]
+        
+        # Determine path and counter
+        if self._timelapse_folder:
+            file_path = self._timelapse_folder
+            self._timelapse_counter += 1
+            return f'{file_path}/{template.format(date_and_time, str(self._timelapse_counter))}.{extension}'
+        else:
+            file_path = self.settings["files"]["path"]
+            if not self._initialized_counter:
+                self._initialize_file_counter(file_path, template)
+            
+            self._file_counter += 1
+            return f'{file_path}/{template.format(date_and_time, str(self._file_counter))}.{extension}'
 
     def set_image_format(self, value=None):
         if value is not None:
@@ -454,6 +493,36 @@ class CameraBase(ABC):
             self.image_quality = value
             print(f"Image quality set to {value}")
         return self.image_quality
+
+    def timer(self, value=None):
+        if value is not None:
+            self._timer = int(value)
+            if self._timer > 0:
+                self._timelapse_interval = 0
+            print(f"Timer set to {self._timer}s")
+        return self._timer
+
+    def timelapse_interval(self, value=None):
+        if value is not None:
+            self._timelapse_interval = int(value)
+            if self._timelapse_interval > 0:
+                self._timer = 0
+            print(f"Timelapse interval set to {self._timelapse_interval}s")
+        return self._timelapse_interval
+
+    def timelapse_duration(self, value=None):
+        if value is not None:
+            self._timelapse_duration = int(value)
+            print(f"Timelapse duration set to {self._timelapse_duration}min")
+        return self._timelapse_duration
+
+    def get_mode(self) -> str:
+        if self._timelapse_interval > 0:
+            return f"TL {self._timelapse_interval}s"
+        elif self._timer > 0:
+            return f"TMR {self._timer}s"
+        else:
+            return "Single"
 
     def _save_image_task(self, file_name, data, fmt, quality, resolution):
         try:
@@ -706,6 +775,7 @@ class RealCamera(CameraBase):
 
     def directory(self) -> Dict[str, Callable]:
         return {
+            "mode": self.get_mode,
             "exposure": self.exposure,
             "shutter": self.shutter_speed,
             "iso": self.iso,
@@ -721,7 +791,10 @@ class RealCamera(CameraBase):
             "imageformat": self.set_image_format,
             "quality": self.set_image_quality,
             "filesize": self.get_estimated_size,
-            "remaining": self.get_remaining_photos
+            "remaining": self.get_remaining_photos,
+            "timer": self.timer,
+            "timelapse_interval": self.timelapse_interval,
+            "timelapse_duration": self.timelapse_duration
         }
 
 
@@ -934,6 +1007,7 @@ class MockCamera(CameraBase):
 
     def directory(self) -> Dict[str, Callable]:
         return {
+            "mode": self.get_mode,
             "exposure": self.exposure,
             "shutter": self.shutter_speed,
             "iso": self.iso,
@@ -949,7 +1023,10 @@ class MockCamera(CameraBase):
             "imageformat": self.set_image_format,
             "quality": self.set_image_quality,
             "filesize": self.get_estimated_size,
-            "remaining": self.get_remaining_photos
+            "remaining": self.get_remaining_photos,
+            "timer": self.timer,
+            "timelapse_interval": self.timelapse_interval,
+            "timelapse_duration": self.timelapse_duration
         }
 
     def get_supported_options(self, key: str) -> Optional[list]:

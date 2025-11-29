@@ -83,9 +83,29 @@ class Buttons:
 
     def _initialize_buttons(self, settings: Dict[str, Any]):
         self.buttons = {}
-        for obj in settings['buttons']:
-            self.buttons[obj["name"]] = {
-                'button': ButtonClass(obj["gpio"]), 
-                'description': obj["description"], 
-                'event': obj["event"]
+        controls = settings.get('controls', {})
+        
+        for action, config in controls.items():
+            key_name = config.get('key')
+            pin = config.get('pin')
+            
+            # Resolve pygame constant
+            # We need to handle cases where key_name might be an int (legacy) or string
+            if isinstance(key_name, int):
+                event_key = key_name
+            else:
+                event_key = getattr(pygame, key_name, None)
+            
+            if event_key is None:
+                print(f"Warning: Unknown key {key_name} for action {action}")
+                continue
+            
+            # Skip if no pin is assigned (keyboard only)
+            if pin is None:
+                continue
+                
+            self.buttons[action] = {
+                'button': ButtonClass(pin),
+                'description': action,
+                'event': event_key
             }

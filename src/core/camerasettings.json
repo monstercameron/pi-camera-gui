@@ -39,38 +39,36 @@
             "item_height_sub": 50
         }
     },
-    "controls": {
-        "up": {
-            "key": "K_UP",
-            "pin": 21
+    "buttons": [
+        {
+            "name": "capture",
+            "description": "take photos",
+            "gpio": 15,
+            "event": 13
         },
-        "down": {
-            "key": "K_DOWN",
-            "pin": 16
+        {
+            "name": "keyup",
+            "description": "menu up",
+            "gpio": 21,
+            "event": 273
         },
-        "left": {
-            "key": "K_LEFT",
-            "pin": 20
+        {
+            "name": "keyright",
+            "description": "menu enter",
+            "gpio": 26,
+            "event": 275
         },
-        "right": {
-            "key": "K_RIGHT",
-            "pin": 26
+        {
+            "name": "keydown",
+            "description": "menu down",
+            "gpio": 16,
+            "event": 274
         },
-        "enter": {
-            "key": "K_RETURN",
-            "pin": 19
-        },
-        "back": {
-            "key": "K_BACKSPACE",
-            "pin": 6
-        },
-        "shutter": {
-            "key": "K_SPACE",
-            "pin": 15
-        },
-        "quit": {
-            "key": "K_ESCAPE",
-            "pin": null
+        {
+            "name": "keyleft",
+            "description": "menu exit",
+            "gpio": 20,
+            "event": 276
         }
-    }
+    ]
 }
