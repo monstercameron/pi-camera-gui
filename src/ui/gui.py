@@ -59,6 +59,11 @@ class GUI:
         # Cache
         self._icon_cache: Dict[str, Any] = {}
         
+        # Stats strip animation state
+        self._prev_stat_values: Dict[str, Any] = {}  # Previous values for animation
+        self._stat_animations: Dict[str, Dict] = {}  # {key: {start_time, old_value, new_value, direction}}
+        self._stat_anim_duration = 100  # ms
+        
         # Initialize Layout Parser
         try:
             self.layout = LayoutParser(theme_config=settings.get("theme", {}))
@@ -735,24 +740,60 @@ class GUI:
                 # First pass: calculate positions for all renderable stats
                 stat_positions = []  # List of (key, start_x, end_x, is_cameramode, render_color)
                 temp_x = current_x
+                current_time = pygame.time.get_ticks()
                 
                 for key in quick_stats:
                     if key == "cameramode":
                         mode_color = self._parse_color(mode_colors_config.get(current_mode, "#FFFFFF"))
                         mode_display = current_mode.upper()[:4]
-                        mode_surf = font.render(f"[{mode_display}]", True, mode_color)
+                        new_value = f"[{mode_display}]"
+                        mode_surf = font.render(new_value, True, mode_color)
+                        
+                        # Check for value change and start animation
+                        old_value = self._prev_stat_values.get(key)
+                        if old_value is not None and old_value != new_value:
+                            # Determine direction: compare alphabetically for mode
+                            direction = 1 if new_value > old_value else -1
+                            self._stat_animations[key] = {
+                                "start_time": current_time,
+                                "old_value": old_value,
+                                "new_value": new_value,
+                                "direction": direction
+                            }
+                        self._prev_stat_values[key] = new_value
+                        
                         stat_positions.append({
                             "key": key,
                             "start_x": temp_x,
                             "end_x": temp_x + mode_surf.get_width(),
                             "is_cameramode": True,
                             "color": mode_color,
-                            "surface": mode_surf
+                            "surface": mode_surf,
+                            "value": new_value
                         })
                         temp_x += mode_surf.get_width() + spacing + 5
                     elif key in directory:
                         start_x = temp_x
-                        value = self._format_stat_value(key, directory[key]())
+                        raw_value = directory[key]()
+                        value = self._format_stat_value(key, raw_value)
+                        
+                        # Check for value change and start animation
+                        old_value = self._prev_stat_values.get(key)
+                        if old_value is not None and old_value != value:
+                            # Determine direction based on numeric comparison if possible
+                            try:
+                                old_num = float(str(old_value).replace('s', '').replace('K', '000'))
+                                new_num = float(str(value).replace('s', '').replace('K', '000'))
+                                direction = 1 if new_num > old_num else -1
+                            except (ValueError, TypeError):
+                                direction = 1  # Default to up for non-numeric
+                            self._stat_animations[key] = {
+                                "start_time": current_time,
+                                "old_value": old_value,
+                                "new_value": value,
+                                "direction": direction
+                            }
+                        self._prev_stat_values[key] = value
                         
                         # Calculate icon width
                         icon = self._load_icon(key, icon_size)
@@ -782,9 +823,10 @@ class GUI:
                 if num_stats > 0 and self.quick_menu_pos[0] >= num_stats:
                     self.quick_menu_pos[0] = num_stats - 1
                 
-                # Second pass: render with proper selection
+                # Second pass: render with proper selection and animation
                 for i, stat in enumerate(stat_positions):
                     is_selected = not self.settings["display"]["showmenu"] and i == self.quick_menu_pos[0]
+                    key = stat["key"]
                     
                     # Draw selection box FIRST (behind content)
                     if is_selected:
@@ -801,14 +843,34 @@ class GUI:
                         # Draw border
                         pygame.draw.rect(self.layer, stat_color, selection_rect, selection_border)
                     
+                    # Check if this stat is animating
+                    anim = self._stat_animations.get(key)
+                    anim_progress = 0.0
+                    if anim:
+                        elapsed = current_time - anim["start_time"]
+                        if elapsed < self._stat_anim_duration:
+                            anim_progress = elapsed / self._stat_anim_duration
+                        else:
+                            # Animation complete, remove it
+                            del self._stat_animations[key]
+                            anim = None
+                    
                     # Now render the content
                     if stat["is_cameramode"]:
-                        surf_rect = stat["surface"].get_rect(midleft=(stat["start_x"], center_y))
-                        self.layer.blit(stat["surface"], surf_rect)
+                        if anim and anim_progress > 0:
+                            # Animate camera mode change
+                            self._render_animated_value(
+                                font, anim["old_value"], anim["new_value"],
+                                stat["color"], stat["start_x"], y, h, center_y,
+                                anim_progress, anim["direction"], is_midleft=True
+                            )
+                        else:
+                            surf_rect = stat["surface"].get_rect(midleft=(stat["start_x"], center_y))
+                            self.layer.blit(stat["surface"], surf_rect)
                     else:
                         render_x = stat["start_x"]
                         
-                        # Draw icon or label
+                        # Draw icon or label (not animated)
                         if stat["icon"]:
                             icon_rect = stat["icon"].get_rect(midleft=(render_x, center_y))
                             self.layer.blit(stat["icon"], icon_rect)
@@ -819,10 +881,17 @@ class GUI:
                             self.layer.blit(label_surf, label_rect)
                             render_x += label_surf.get_width() + 5
                         
-                        # Draw value
-                        val_surf = font.render(stat["value"], True, color)
-                        val_rect = val_surf.get_rect(midleft=(render_x, center_y))
-                        self.layer.blit(val_surf, val_rect)
+                        # Draw value (with animation if active)
+                        if anim and anim_progress > 0:
+                            self._render_animated_value(
+                                font, anim["old_value"], anim["new_value"],
+                                color, render_x, y, h, center_y,
+                                anim_progress, anim["direction"], is_midleft=True
+                            )
+                        else:
+                            val_surf = font.render(stat["value"], True, color)
+                            val_rect = val_surf.get_rect(midleft=(render_x, center_y))
+                            self.layer.blit(val_surf, val_rect)
 
                 # Render Right Stats (Right Justified)
                 current_x = x + w - 15
@@ -895,6 +964,52 @@ class GUI:
             self._icon_cache[cache_key] = None
         
         return None
+
+    def _render_animated_value(self, font, old_value: str, new_value: str, color: tuple, 
+                                x: int, y: int, h: int, center_y: int, 
+                                progress: float, direction: int, is_midleft: bool = True):
+        """
+        Render an animated scroll transition between old and new values.
+        direction: 1 = scroll up (new value comes from below), -1 = scroll down (new value comes from above)
+        progress: 0.0 to 1.0
+        """
+        # Ease out cubic for smooth deceleration
+        eased = 1 - pow(1 - progress, 3)
+        
+        # Calculate vertical offset (half the height for full scroll)
+        max_offset = h // 2
+        offset = int(max_offset * eased)
+        
+        # Old value scrolls out (in direction)
+        old_surf = font.render(old_value, True, color)
+        old_alpha = int(255 * (1 - eased))
+        old_surf.set_alpha(old_alpha)
+        
+        # New value scrolls in (from opposite direction)
+        new_surf = font.render(new_value, True, color)
+        new_alpha = int(255 * eased)
+        new_surf.set_alpha(new_alpha)
+        
+        if direction > 0:  # Value increased - scroll up
+            # Old value moves up and fades out
+            old_y = center_y - offset
+            # New value comes from below
+            new_y = center_y + (max_offset - offset)
+        else:  # Value decreased - scroll down
+            # Old value moves down and fades out
+            old_y = center_y + offset
+            # New value comes from above
+            new_y = center_y - (max_offset - offset)
+        
+        if is_midleft:
+            old_rect = old_surf.get_rect(midleft=(x, old_y))
+            new_rect = new_surf.get_rect(midleft=(x, new_y))
+        else:
+            old_rect = old_surf.get_rect(center=(x, old_y))
+            new_rect = new_surf.get_rect(center=(x, new_y))
+        
+        self.layer.blit(old_surf, old_rect)
+        self.layer.blit(new_surf, new_rect)
 
     def _format_stat_value(self, key: str, value) -> str:
         """Format stat values for display."""
