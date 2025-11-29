@@ -5,6 +5,7 @@ from typing import Dict, Any, List, Optional, Callable
 
 from src.ui.layout_parser import LayoutParser
 from src.ui.gallery import Gallery
+from src.ui.controls import MenuController
 
 class GUI:
     def __init__(self, settings: Dict[str, Any], menus: Dict[str, Any], camera: Optional[Any] = None):
@@ -39,7 +40,7 @@ class GUI:
         
         # Flash Effect State
         self.flash_start_time = 0
-        self.flash_duration = 25 # ms
+        self.flash_duration = 25 # Default, will be updated from layout
 
         # Timer & Timelapse State
         self.timer_active = False
@@ -64,11 +65,27 @@ class GUI:
         self._stat_animations: Dict[str, Dict] = {}  # {key: {start_time, old_value, new_value, direction}}
         self._stat_anim_duration = 100  # Default, will be overridden by layout
         
+        # Menu highlight animation state
+        self._highlight_animations: Dict[str, Dict] = {}  # {container_id: {start_time, from_index, to_index}}
+        self._highlight_anim_duration = 100  # ms - animation duration for menu highlight
+        self._prev_selection_indices: Dict[str, int] = {}  # {container_id: last_selected_index}
+        
         # Initialize Layout Parser
         try:
             # Pass full settings so layout can access theme colors/sizes and display.animation_duration
             self.layout = LayoutParser(theme_config=settings)
             print("Layout parser initialized")
+            
+            # Update durations from layout
+            self.flash_duration = self.layout.get_flash_duration()
+            self._highlight_anim_duration = self.layout.get_named_animation_duration('highlight_slide')
+            
+            # Initialize menu controller with layout settings
+            MenuController.init_from_layout(self.layout)
+            
+            # Apply startup config from XML
+            startup_config = self.layout.get_startup_config()
+            self.settings["display"]["showmenu"] = startup_config.get('show_menu', False)
         except Exception as e:
             print(f"Failed to initialize layout parser: {e}")
             self.layout = None
@@ -208,6 +225,9 @@ class GUI:
                 self.transition_to = current_level
                 self.transition_start = pygame.time.get_ticks()
                 self.last_level = current_level
+                # Clear highlight animations on level change to prevent ghosting
+                self._highlight_animations.clear()
+                self._prev_selection_indices.clear()
 
             # Render Gallery
             if self.gallery.active:
@@ -215,6 +235,17 @@ class GUI:
                 pygame.display.flip()
                 self.clock.tick(30)
                 continue
+
+            # Ensure layout is loaded based on current menu selection (even if menu hidden)
+            if self.layout:
+                current_menu_index = self.menu_positions[0]
+                if 0 <= current_menu_index < len(self.menus["menus"]):
+                    current_menu_name = self.menus["menus"][current_menu_index]["name"]
+                    if current_menu_name != "gallery":
+                        self.layout.load_layout(current_menu_name)
+
+            # Apply any pending debounced settings changes (from quick stats)
+            MenuController.apply_pending_changes(self.camera)
 
             # Render Menu
             if self.settings["display"]["showmenu"]:
@@ -226,9 +257,15 @@ class GUI:
             else:
                 self.screen.blit(self.layer, (0, 0))
 
-            # Render Flash Effect
+            # Render Flash Effect - use overlay config from XML
             if pygame.time.get_ticks() - self.flash_start_time < self.flash_duration:
-                self.screen.fill((255, 255, 255))
+                flash_color = (255, 255, 255)  # Default
+                if self.layout:
+                    flash_overlay = self.layout.get_overlay('flash_effect')
+                    if flash_overlay and flash_overlay.get('containers'):
+                        bg_color = flash_overlay['containers'][0].get('bg_color', '#FFFFFF')
+                        flash_color = self._parse_color(bg_color)
+                self.screen.fill(flash_color)
 
             # Handle Timer Logic & Rendering
             if self.timer_active:
@@ -264,19 +301,9 @@ class GUI:
                         else:
                             self.timelapse_end_time = 0
                 else:
-                    # Render Countdown
+                    # Render Countdown - use overlay config from XML
                     count_text = str(int(remaining) + 1)
-                    # Big Font
-                    big_font = pygame.font.Font('freesansbold.ttf', 120)
-                    text_surf = big_font.render(count_text, True, (255, 255, 255))
-                    text_rect = text_surf.get_rect(center=(self.width // 2, self.height // 2))
-                    
-                    # Shadow
-                    shadow_surf = big_font.render(count_text, True, (0, 0, 0))
-                    shadow_rect = shadow_surf.get_rect(center=(self.width // 2 + 4, self.height // 2 + 4))
-                    
-                    self.screen.blit(shadow_surf, shadow_rect)
-                    self.screen.blit(text_surf, text_rect)
+                    self._render_overlay('timer_countdown', {'countdown': count_text})
 
             # Handle Timelapse Logic & Rendering
             if self.timelapse_active:
@@ -294,10 +321,8 @@ class GUI:
                         if hasattr(self.camera, 'stop_timelapse_session'):
                             self.camera.stop_timelapse_session()
                 
-                # Render Timelapse Status Icon/Text
-                status_text = f"TL: {self.timelapse_count}"
-                tl_surf = self.stats_font.render(status_text, True, (255, 50, 50))
-                self.screen.blit(tl_surf, (10, 10))
+                # Render Timelapse Status - use overlay config from XML
+                self._render_overlay('timelapse_status', {'timelapse_count': self.timelapse_count})
 
             pygame.display.flip()
             self.clock.tick(self.settings["display"]["refreshrate"])
@@ -334,46 +359,46 @@ class GUI:
         else:
             t = 1.0
 
-        # Helper to get target width for a column at a specific level state
-        def get_target_width(col_idx, level_state):
-            collapsed_width = layout_widths['collapsed']
-            # Level 0 (Main Menu)
-            if col_idx == 0:
-                # Collapses if level > 0
-                return collapsed_width if level_state > 0 else layout_widths['level_0']
-            # Level 1 (Submenu)
-            elif col_idx == 1:
-                # Hidden if level < 1
-                if level_state < 1: return 0
-                # Collapses if level > 1
-                return collapsed_width if level_state > 1 else layout_widths['level_1']
-            # Level 2 (Options)
-            elif col_idx == 2:
-                # Hidden if level < 2
-                if level_state < 2: return 0
-                return layout_widths['level_2']
-            return 0
+        # Helper to get target width using XML-defined collapse rules
+        def get_target_width(col_id: str, level_state: int) -> int:
+            collapsed_width = layout_widths.get('collapsed', 60)
+            expanded_width = layout_widths.get(col_id, 200)
+            
+            if self.layout:
+                # Use XML-defined visibility and collapse rules
+                if not self.layout.is_column_visible(col_id, level_state):
+                    return 0
+                if self.layout.should_collapse_column(col_id, level_state):
+                    return collapsed_width
+            else:
+                # Fallback hardcoded logic
+                if col_id == 'level_0':
+                    return collapsed_width if level_state > 0 else expanded_width
+                elif col_id == 'level_1':
+                    if level_state < 1: return 0
+                    return collapsed_width if level_state > 1 else expanded_width
+                elif col_id == 'level_2':
+                    if level_state < 2: return 0
+            
+            return expanded_width
 
         # Interpolate Widths
-        w0_start = get_target_width(0, self.transition_from)
-        w0_end = get_target_width(0, self.transition_to)
+        w0_start = get_target_width('level_0', self.transition_from)
+        w0_end = get_target_width('level_0', self.transition_to)
         l0_width = int(w0_start + (w0_end - w0_start) * t)
 
-        w1_start = get_target_width(1, self.transition_from)
-        w1_end = get_target_width(1, self.transition_to)
+        w1_start = get_target_width('level_1', self.transition_from)
+        w1_end = get_target_width('level_1', self.transition_to)
         l1_width = int(w1_start + (w1_end - w1_start) * t)
         
         # Determine collapsed state for rendering content
         # We use the target state (current_level) to decide content mode immediately
-        l0_collapsed = (current_level > 0)
-        l1_collapsed = (current_level > 1)
+        l0_collapsed = self.layout.should_collapse_column('level_0', current_level) if self.layout else (current_level > 0)
+        l1_collapsed = self.layout.should_collapse_column('level_1', current_level) if self.layout else (current_level > 1)
 
         x_cursor = 0
 
         # --- Level 0 (Main Menu) ---
-        # Try to get width from layout if not collapsed (for target calculation reference)
-        # But for animation we use our calculated l0_width
-        
         self._render_container("level_0", self.menus["menus"], self.menu_positions[0], 
                                override_x=x_cursor, override_width=l0_width, collapsed=l0_collapsed)
         x_cursor += l0_width
@@ -389,11 +414,8 @@ class GUI:
                 x_cursor += l1_width
 
                 # --- Level 2 (Options/Values) ---
-                # Level 2 width is just remaining space or standard?
-                # We didn't animate Level 2 width explicitly in previous code, it just appeared.
-                # Let's animate it too.
-                w2_start = get_target_width(2, self.transition_from)
-                w2_end = get_target_width(2, self.transition_to)
+                w2_start = get_target_width('level_2', self.transition_from)
+                w2_end = get_target_width('level_2', self.transition_to)
                 l2_width = int(w2_start + (w2_end - w2_start) * t)
 
                 if l2_width > 0:
@@ -471,16 +493,57 @@ class GUI:
         # Define clipping rect
         container_rect = pygame.Rect(x, y, w, h)
         self.layer.set_clip(container_rect)
+        
+        # --- Menu Highlight Animation ---
+        # Track selection changes and animate the highlight
+        now = pygame.time.get_ticks()
+        num_items = len(items)
+        
+        # Get previous state for this container
+        prev_index = self._prev_selection_indices.get(container_id, selected_index)
+        
+        # Clamp prev_index to valid range (in case items changed)
+        if num_items > 0:
+            prev_index = max(0, min(prev_index, num_items - 1))
+        
+        # Check if selection changed AND it's a valid small move (not a level change)
+        if prev_index != selected_index and num_items > 0:
+            # Only animate if it's a 1-step move (up/down navigation)
+            # Large jumps (like level changes) should snap immediately
+            if abs(prev_index - selected_index) <= 1 or (prev_index == 0 and selected_index == num_items - 1) or (prev_index == num_items - 1 and selected_index == 0):
+                self._highlight_animations[container_id] = {
+                    'start_time': now,
+                    'from_index': prev_index,
+                    'to_index': selected_index
+                }
+            self._prev_selection_indices[container_id] = selected_index
+        
+        # Calculate animated highlight position
+        highlight_y_offset = float(selected_index)  # Default to final position
+        
+        if container_id in self._highlight_animations:
+            anim = self._highlight_animations[container_id]
+            elapsed = now - anim['start_time']
+            
+            if elapsed < self._highlight_anim_duration:
+                # Animation in progress - interpolate position
+                t = elapsed / self._highlight_anim_duration
+                # Ease-out cubic for smooth deceleration
+                t = 1 - (1 - t) ** 3
+                highlight_y_offset = anim['from_index'] + (anim['to_index'] - anim['from_index']) * t
+            else:
+                # Animation complete - clean up
+                del self._highlight_animations[container_id]
+        
+        # Draw animated selection highlight (before drawing items so it's behind text)
+        if orientation == "vertical" and num_items > 0:
+            highlight_y = current_y + (highlight_y_offset * item_height)
+            selection_rect = pygame.Rect(x, highlight_y, w, item_height)
+            pygame.draw.rect(self.layer, selection_bg_color, selection_rect)
 
         for i, item in enumerate(items):
             is_selected = (i == selected_index)
             color = selected_color if is_selected else unselected_color
-            
-            # Draw Selection Box
-            if is_selected and orientation == "vertical":
-                selection_rect = pygame.Rect(x, current_y + (i * item_height), w, item_height)
-                pygame.draw.rect(self.layer, selection_bg_color, selection_rect)
-                # pygame.draw.rect(self.layer, selected_color, selection_rect, 1)
 
             # Prepare Text
             display_name = str(item.get("displayname", item.get("name", ""))).title()
@@ -493,17 +556,24 @@ class GUI:
                 # Normalize: lowercase, replace spaces with underscores
                 raw_name = str(item.get("name", "")).lower().replace(" ", "_")
                 
-                # Icon Aliases from settings
-                stats_config = self.settings.get("stats", {})
-                icon_aliases = stats_config.get("icon_aliases", {
-                    "exposurecomp": "exposure",
-                    "imagedenoise": "denoise",
-                    "exposure": "mode"
-                })
-                if raw_name in icon_aliases:
-                    raw_name = icon_aliases[raw_name]
+                # Get icon path config from layout
+                if self.layout:
+                    raw_name = self.layout.get_icon_name(raw_name)
+                    icon_path_base = self.layout.get_icon_path()
+                    icon_ext = self.layout.get_icon_extension()
+                else:
+                    # Fallback icon aliases
+                    icon_aliases = {
+                        "exposurecomp": "exposure",
+                        "imagedenoise": "denoise",
+                        "exposure": "mode"
+                    }
+                    if raw_name in icon_aliases:
+                        raw_name = icon_aliases[raw_name]
+                    icon_path_base = "src/ui/icons"
+                    icon_ext = ".svg"
 
-                icon_path = f"src/ui/icons/{raw_name}.svg"
+                icon_path = f"{icon_path_base}/{raw_name}{icon_ext}"
                 
                 # Check Cache
                 if icon_path in self._icon_cache:
@@ -545,17 +615,24 @@ class GUI:
                 icon_width = 0
                 raw_name = str(item.get("name", "")).lower().replace(" ", "_")
                 
-                # Icon Aliases from settings
-                stats_config = self.settings.get("stats", {})
-                icon_aliases = stats_config.get("icon_aliases", {
-                    "exposurecomp": "exposure",
-                    "imagedenoise": "denoise",
-                    "exposure": "mode"
-                })
-                if raw_name in icon_aliases:
-                    raw_name = icon_aliases[raw_name]
+                # Get icon path config from layout
+                if self.layout:
+                    raw_name = self.layout.get_icon_name(raw_name)
+                    icon_path_base = self.layout.get_icon_path()
+                    icon_ext = self.layout.get_icon_extension()
+                else:
+                    # Fallback icon aliases
+                    icon_aliases = {
+                        "exposurecomp": "exposure",
+                        "imagedenoise": "denoise",
+                        "exposure": "mode"
+                    }
+                    if raw_name in icon_aliases:
+                        raw_name = icon_aliases[raw_name]
+                    icon_path_base = "src/ui/icons"
+                    icon_ext = ".svg"
 
-                icon_path = f"src/ui/icons/{raw_name}.svg"
+                icon_path = f"{icon_path_base}/{raw_name}{icon_ext}"
                 
                 # Check Cache
                 if icon_path in self._icon_cache:
@@ -606,15 +683,22 @@ class GUI:
                     dest_y = current_y + (i * item_height)
                     dest_y += (item_height - text_rect.height) // 2
                     
-                    # Handle Scrolling
+                    # Handle Scrolling - use XML config
                     max_width = w - (padding * 2) - 25 - icon_width
                     overflow = text_rect.width - max_width
                     
                     draw_x = current_x + icon_width
                     
                     if overflow > 0 and is_selected:
-                        scroll_speed = 0.05
-                        pause_time = 1000
+                        # Get scroll config from layout
+                        if self.layout:
+                            scroll_config = self.layout.get_text_scroll_config()
+                            scroll_speed = scroll_config.get('speed', 0.05)
+                            pause_time = scroll_config.get('pause_ms', 1000)
+                        else:
+                            scroll_speed = 0.05
+                            pause_time = 1000
+                        
                         scroll_time = overflow / scroll_speed
                         total_cycle_time = scroll_time + (pause_time * 2)
                         current_time = pygame.time.get_ticks() % total_cycle_time
@@ -695,6 +779,66 @@ class GUI:
             return tuple(int(hex_string[i:i+2], 16) for i in (0, 2, 4, 6))
         return (255, 255, 255)
 
+    def _render_overlay(self, overlay_name: str, data: Dict[str, Any] = None):
+        """Render an overlay using XML config."""
+        if not self.layout:
+            return
+        
+        overlay = self.layout.get_overlay(overlay_name)
+        if not overlay:
+            return
+        
+        # Get position and styling from overlay config
+        x = overlay.get('x', 0)
+        y = overlay.get('y', 0)
+        font_size = overlay.get('font_size', 16)
+        color = self._parse_color(overlay.get('color', '#FFFFFF'))
+        text_template = overlay.get('text', '')
+        
+        # Shadow settings
+        has_shadow = overlay.get('shadow', False)
+        shadow_color = self._parse_color(overlay.get('shadow_color', '#000000'))
+        shadow_offset = overlay.get('shadow_offset', 4)
+        
+        # Handle percentage-based positioning
+        if isinstance(x, str) and x.endswith('%'):
+            x = int(self.screen.get_width() * int(x[:-1]) / 100)
+        if isinstance(y, str) and y.endswith('%'):
+            y = int(self.screen.get_height() * int(y[:-1]) / 100)
+        
+        # Format text with provided data
+        if data:
+            text = text_template.format(**data) if text_template else ''
+        else:
+            text = text_template
+        
+        # Handle specific overlay types
+        if overlay_name == 'timelapse_status':
+            text = f"TL: {data.get('timelapse_count', 0)}"
+        elif overlay_name == 'timer_countdown':
+            text = str(data.get('countdown', ''))
+        
+        # Create font at specified size and render
+        try:
+            font = pygame.font.Font('freesansbold.ttf', font_size)
+        except:
+            font = pygame.font.Font(None, font_size)
+        text_surf = font.render(text, True, color)
+        
+        # Center if position is percentage-based or centered flag is set
+        centered = overlay.get('centered', False)
+        if centered or (isinstance(overlay.get('x'), str) and overlay.get('x').endswith('%')):
+            x -= text_surf.get_width() // 2
+        if centered or (isinstance(overlay.get('y'), str) and overlay.get('y').endswith('%')):
+            y -= text_surf.get_height() // 2
+        
+        # Render shadow if enabled
+        if has_shadow:
+            shadow_surf = font.render(text, True, shadow_color)
+            self.screen.blit(shadow_surf, (x + shadow_offset, y + shadow_offset))
+        
+        self.screen.blit(text_surf, (x, y))
+
     def _render_camera_overlay(self):
         # Stats
         directory = self.camera.directory()
@@ -702,14 +846,20 @@ class GUI:
         # Get current camera mode from settings
         current_mode = self.settings.get("mode", {}).get("cameramode", "auto")
         
-        # Get stats config from settings
+        # Get stats config - prefer layout parser, fallback to settings
+        if self.layout:
+            quick_stats = self.layout.get_quick_stats_for_mode(current_mode)
+            if not quick_stats:
+                quick_stats = ["cameramode", "iso", "shutter", "awb", "exposurecomp"]
+        else:
+            stats_config = self.settings.get("stats", {})
+            quick_stats_config = stats_config.get("quick_stats", {})
+            quick_stats = quick_stats_config.get(current_mode, ["cameramode", "iso", "shutter", "awb", "exposurecomp"])
+        
+        # Get left/right stats from settings (these are still in settings for now)
         stats_config = self.settings.get("stats", {})
         left_stats = stats_config.get("left", ["mode", "iso", "shutter", "awb", "exposure"])
         right_stats = stats_config.get("right", ["resolution", "filesize", "remaining"])
-        
-        # Get mode-based quick stats
-        quick_stats_config = stats_config.get("quick_stats", {})
-        quick_stats = quick_stats_config.get(current_mode, ["cameramode", "iso", "shutter", "awb", "exposurecomp"])
         
         # Use stats container from layout
         if self.layout:
@@ -759,12 +909,15 @@ class GUI:
                 center_y = y + h // 2
                 font = pygame.font.Font('freesansbold.ttf', font_size)
                 
-                # Get mode colors from settings
-                mode_colors_config = stats_config.get("mode_colors", {
-                    "auto": "#00FFFF",
-                    "manual": "#FFC864",
-                    "timelapse": "#64FF64"
-                })
+                # Get mode colors from layout parser or fallback
+                if self.layout:
+                    mode_colors_config = self.layout.get_mode_colors()
+                else:
+                    mode_colors_config = {
+                        "auto": "#00FFFF",
+                        "manual": "#FFC864",
+                        "timelapse": "#64FF64"
+                    }
                 selected_color = self._parse_color(self.settings.get("theme", {}).get("colors", {}).get("selected", "#00FFFF"))
                 
                 # First pass: calculate positions for all renderable stats
@@ -967,15 +1120,23 @@ class GUI:
 
     def _load_icon(self, key: str, size: int = 24):
         """Load and cache an icon by key name."""
-        # Apply icon aliases from settings or use defaults
-        stats_config = self.settings.get("stats", {})
-        icon_aliases = stats_config.get("icon_aliases", {
-            "exposurecomp": "exposure",
-            "imagedenoise": "denoise",
-            "exposure": "mode"
-        })
-        icon_key = icon_aliases.get(key, key)
-        icon_path = f"src/ui/icons/{icon_key}.svg"
+        # Apply icon aliases from layout parser
+        if self.layout:
+            icon_key = self.layout.get_icon_name(key)
+            icon_path_base = self.layout.get_icon_path()
+            icon_ext = self.layout.get_icon_extension()
+        else:
+            # Fallback to hardcoded aliases if no layout
+            icon_aliases = {
+                "exposurecomp": "exposure",
+                "imagedenoise": "denoise",
+                "exposure": "mode"
+            }
+            icon_key = icon_aliases.get(key, key)
+            icon_path_base = "src/ui/icons"
+            icon_ext = ".svg"
+        
+        icon_path = f"{icon_path_base}/{icon_key}{icon_ext}"
         
         cache_key = f"{icon_path}_{size}"
         
@@ -1042,14 +1203,21 @@ class GUI:
         self.layer.blit(new_surf, new_rect)
 
     def _format_stat_value(self, key: str, value) -> str:
-        """Format stat values for display."""
+        """Format stat values for display using XML-defined formatters."""
+        # Use layout's formatter if available
+        if self.layout:
+            formatted = self.layout.format_value(key, value)
+            # If formatter handled it (not just str(value)), return it
+            formatter = self.layout.get_formatter(key)
+            if formatter:
+                return formatted
+        
+        # Fallback formatting for common types
         if key == "shutter":
-            # Convert microseconds to readable format
             if isinstance(value, (int, float)) and value > 0:
                 if value >= 1000000:
                     return f"{value / 1000000:.1f}s"
                 elif value >= 1000:
-                    # Show as fraction for common shutter speeds
                     fraction = 1000000 / value
                     if fraction >= 1:
                         return f"1/{int(fraction)}"

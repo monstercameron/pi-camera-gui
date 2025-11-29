@@ -85,7 +85,7 @@ if __name__ == '__main__':
 
     # Wrap handle_event to include callbacks and settings
     def controls_handler(pygame_mod, event, menu_pos, menus, camera=None, menu_active=True, quick_menu_pos=None, action=None):
-        MenuController.handle_event(pygame_mod, event, menu_pos, menus, camera, menu_active, quick_menu_pos, callbacks, action, settings, settings_manager)
+        MenuController.handle_event(pygame_mod, event, menu_pos, menus, camera, menu_active, quick_menu_pos, callbacks, action, settings, settings_manager, gui.layout)
     
     try:
         print("Starting GUI...")

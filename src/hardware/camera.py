@@ -340,11 +340,13 @@ class CameraBase(ABC):
         self.image_quality: int = 85
         
         # Shooting Modes
+        self._shooting_mode: str = "single"  # single, burst, timelapse
         self._timer: int = 0
         self._timelapse_interval: int = 0
         self._timelapse_duration: int = 0
         self._timelapse_folder: Optional[str] = None
         self._timelapse_counter: int = 0
+        self._burst_count: int = 5
         
         # File Counter
         self._file_counter: int = 0
@@ -517,12 +519,29 @@ class CameraBase(ABC):
         return self._timelapse_duration
 
     def get_mode(self) -> str:
-        if self._timelapse_interval > 0:
+        """Returns a display-friendly string for the current mode state"""
+        if self._shooting_mode == "timelapse" and self._timelapse_interval > 0:
             return f"TL {self._timelapse_interval}s"
+        elif self._shooting_mode == "burst":
+            return f"Burst x{self._burst_count}"
         elif self._timer > 0:
             return f"TMR {self._timer}s"
         else:
             return "Single"
+
+    def shooting_mode(self, value=None):
+        """Get/set the shooting mode (single, burst, timelapse)"""
+        if value is not None:
+            self._shooting_mode = str(value)
+            print(f"Shooting mode set to {self._shooting_mode}")
+        return self._shooting_mode
+
+    def burst_count(self, value=None):
+        """Get/set the burst count"""
+        if value is not None:
+            self._burst_count = int(value)
+            print(f"Burst count set to {self._burst_count}")
+        return self._burst_count
 
     def _save_image_task(self, file_name, data, fmt, quality, resolution):
         try:
@@ -780,7 +799,8 @@ class RealCamera(CameraBase):
 
     def directory(self) -> Dict[str, Callable]:
         return {
-            "mode": self.get_mode,
+            "mode": self.shooting_mode,
+            "burst_count": self.burst_count,
             "exposure": self.exposure,
             "shutter": self.shutter_speed,
             "iso": self.iso,
@@ -825,6 +845,10 @@ class MockCamera(CameraBase):
         self._saturation = 0
         self._brightness = 50
         self._exposure_comp = 0
+        
+        # Resolution change debouncing
+        self._pending_resolution = None
+        self._resolution_change_time = 0
 
     def getCamera(self):
         return None
@@ -886,6 +910,9 @@ class MockCamera(CameraBase):
                     display_surface.blit(scaled_frame, dest_rect)
             except Exception:
                 pass
+        
+        # Apply any pending resolution changes (debounced)
+        self.apply_pending_resolution()
         
         # Render Menu Layer on top
         display_surface.blit(overlay_surface, (0, 0))
@@ -965,12 +992,38 @@ class MockCamera(CameraBase):
     def resolution_get_set(self, value=None):
         if value is not None:
             str_to_tuple = tuple(map(int, value.split(',')))
+            
+            # Skip if same resolution
+            if self.resolution == str_to_tuple:
+                return self.resolution
+                
             self.resolution = str_to_tuple
             print(f"MockCamera: Set resolution to {self.resolution}")
+            
+            # Debounce: only restart preview if enough time has passed
+            # This prevents rapid stop/start cycles when scrolling through options
+            current_time = time.time()
             if self.is_previewing:
-                self.stopPreview()
-                self.startPreview()
+                if current_time - self._resolution_change_time > 0.3:  # 300ms debounce
+                    self.stopPreview()
+                    self.startPreview()
+                    self._resolution_change_time = current_time
+                else:
+                    # Queue the resolution change, will be applied on next frame
+                    self._pending_resolution = str_to_tuple
         return self.resolution
+    
+    def apply_pending_resolution(self):
+        """Apply pending resolution change if debounce period has passed."""
+        if self._pending_resolution is not None:
+            current_time = time.time()
+            if current_time - self._resolution_change_time > 0.3:
+                if self.is_previewing and self.resolution != self._pending_resolution:
+                    self.resolution = self._pending_resolution
+                    self.stopPreview()
+                    self.startPreview()
+                    self._resolution_change_time = current_time
+                self._pending_resolution = None
 
     def captureImage(self):
         print(f"MockCamera: *CLICK* Image captured at {self.resolution} in {self.image_format}")
@@ -1021,7 +1074,8 @@ class MockCamera(CameraBase):
 
     def directory(self) -> Dict[str, Callable]:
         return {
-            "mode": self.get_mode,
+            "mode": self.shooting_mode,
+            "burst_count": self.burst_count,
             "exposure": self.exposure,
             "shutter": self.shutter_speed,
             "iso": self.iso,

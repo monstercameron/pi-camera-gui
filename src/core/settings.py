@@ -2,6 +2,7 @@ import json
 from os import path, makedirs
 from typing import Dict, Any, Tuple, List
 from src.core.database import DatabaseManager
+from src.ui.layout_parser import LayoutParser
 
 class SettingsManager:
     # Camera settings that should be reset to "auto" when switching to auto mode
@@ -24,16 +25,19 @@ class SettingsManager:
         "imageeffect"
     ]
 
-    def __init__(self, settings_file: str = 'home/config/camerasettings.json', menus_file: str = 'home/config/menusettings.json'):
+    def __init__(self, settings_file: str = 'home/config/camerasettings.json'):
         self.settings_file = settings_file
-        self.menus_file = menus_file
         self.settings: Dict[str, Any] = {}
         self.menus: Dict[str, Any] = {}
         self.db = DatabaseManager()
+        self.layout_parser = None
 
     def load(self) -> Tuple[Dict[str, Any], Dict[str, Any]]:
         self.settings = self._open_settings(self.settings_file)
-        self.menus = self._open_settings(self.menus_file)
+        
+        # Load menus from XML via layout parser
+        self.layout_parser = LayoutParser(theme_config=self.settings)
+        self.menus = {"menus": self.layout_parser.get_menus_list()}
         
         # Overlay DB values onto menus
         self._apply_db_values()
@@ -49,8 +53,9 @@ class SettingsManager:
     def reset(self):
         """Reset all menu settings to defaults (clears DB)"""
         self.db.reset_settings()
-        # Reload defaults from JSON
-        self.menus = self._open_settings(self.menus_file)
+        # Reload defaults from XML layout
+        self.layout_parser = LayoutParser(theme_config=self.settings)
+        self.menus = {"menus": self.layout_parser.get_menus_list()}
         return self.menus
 
     def save_mode_settings(self, mode: str, menus: Dict[str, Any]):

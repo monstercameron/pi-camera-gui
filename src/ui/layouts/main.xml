@@ -1,358 +1,853 @@
 <layout>
     <!-- 
-        Unified Layout Configuration
-        All mode-specific layouts defined as nested <mode> elements
-        Uses CSS-like styling with @variable references from theme config
+        Unified Layout & Menu Configuration
+        All styling, menus, layouts, and primitives defined in XML
+        Uses @variable references from theme config in camerasettings.json
+        
+        STRUCTURE:
+        1. primitives - Basic reusable UI building blocks
+        2. style - Animations, text styles, border styles
+        3. config - Global configuration
+        4. components - Composite UI elements built from primitives
+        5. menus - Menu data definitions
+        6. stats - Stats strip configuration
+        7. layouts - Screen layout definitions using components
     -->
     
+    <!-- ============================================ -->
+    <!-- PRIMITIVES - Basic UI Building Blocks -->
+    <!-- ============================================ -->
+    <primitives>
+        <!-- Panel: Basic rectangular container -->
+        <primitive name="panel">
+            <property name="x" type="dimension" default="0" />
+            <property name="y" type="dimension" default="0" />
+            <property name="width" type="dimension" default="100" />
+            <property name="height" type="dimension" default="100" />
+            <property name="bg_color" type="color" default="transparent" />
+            <property name="border_width" type="int" default="0" />
+            <property name="border_color" type="color" default="transparent" />
+            <property name="border_radius" type="int" default="0" />
+            <property name="padding" type="int" default="0" />
+            <property name="opacity" type="float" default="1.0" />
+        </primitive>
+        
+        <!-- Text: Text rendering element -->
+        <primitive name="text">
+            <property name="content" type="string" default="" />
+            <property name="font_size" type="int" default="16" />
+            <property name="color" type="color" default="#FFFFFF" />
+            <property name="bold" type="bool" default="false" />
+            <property name="align" type="enum" values="left,center,right" default="left" />
+            <property name="valign" type="enum" values="top,middle,bottom" default="middle" />
+            <property name="truncate" type="int" default="0" description="Max chars, 0=no truncate" />
+            <property name="scroll" type="bool" default="false" description="Scroll long text" />
+        </primitive>
+        
+        <!-- Icon: Image/SVG icon element -->
+        <primitive name="icon">
+            <property name="src" type="string" default="" />
+            <property name="size" type="int" default="24" />
+            <property name="color" type="color" default="#FFFFFF" description="Tint color for SVG" />
+            <property name="fallback" type="string" default="?" description="Text if icon missing" />
+        </primitive>
+        
+        <!-- List: Scrollable list of items -->
+        <primitive name="list">
+            <property name="orientation" type="enum" values="vertical,horizontal" default="vertical" />
+            <property name="item_height" type="int" default="40" />
+            <property name="item_spacing" type="int" default="0" />
+            <property name="selected_index" type="int" default="0" />
+            <property name="wrap" type="bool" default="true" description="Wrap at boundaries" />
+            <property name="scroll_offset" type="int" default="0" />
+        </primitive>
+        
+        <!-- Slider: Range input control -->
+        <primitive name="slider">
+            <property name="min" type="float" default="0" />
+            <property name="max" type="float" default="100" />
+            <property name="step" type="float" default="1" />
+            <property name="value" type="float" default="0" />
+            <property name="orientation" type="enum" values="horizontal,vertical" default="horizontal" />
+            <property name="track_height" type="int" default="4" />
+            <property name="track_color" type="color" default="#333333" />
+            <property name="fill_color" type="color" default="@selected" />
+            <property name="handle_size" type="int" default="20" />
+            <property name="handle_color" type="color" default="#FFFFFF" />
+            <property name="show_labels" type="bool" default="true" />
+        </primitive>
+        
+        <!-- Button: Clickable/selectable element -->
+        <primitive name="button">
+            <property name="label" type="string" default="" />
+            <property name="icon" type="string" default="" />
+            <property name="action" type="string" default="" />
+            <property name="style" type="enum" values="default,primary,danger" default="default" />
+            <property name="disabled" type="bool" default="false" />
+        </primitive>
+        
+        <!-- Chevron: Directional indicator -->
+        <primitive name="chevron">
+            <property name="direction" type="enum" values="left,right,up,down" default="right" />
+            <property name="size" type="int" default="12" />
+            <property name="color" type="color" default="#FFFFFF" />
+            <property name="visible_when" type="string" default="has_children" />
+        </primitive>
+        
+        <!-- Spacer: Empty space for layout -->
+        <primitive name="spacer">
+            <property name="size" type="dimension" default="10" />
+            <property name="flex" type="float" default="0" description="Flex grow factor" />
+        </primitive>
+        
+        <!-- Divider: Visual separator line -->
+        <primitive name="divider">
+            <property name="orientation" type="enum" values="horizontal,vertical" default="horizontal" />
+            <property name="thickness" type="int" default="1" />
+            <property name="color" type="color" default="#333333" />
+            <property name="margin" type="int" default="5" />
+        </primitive>
+    </primitives>
+
+    <!-- ============================================ -->
+    <!-- STYLES & ANIMATIONS -->
+    <!-- ============================================ -->
     <style>
         <!-- Animation definitions -->
         <animation name="menu_transition" duration="@animation_duration" easing="ease-out" />
         <animation name="stat_change" duration="100" easing="ease-out-cubic" />
         <animation name="selection_fade" duration="150" easing="linear" />
+        <animation name="highlight_slide" duration="100" easing="ease-out-cubic" />
         <animation name="gallery_slide" duration="100" easing="ease-out" />
+        <animation name="flash" duration="25" easing="linear" />
+        <animation name="collapse" duration="@animation_duration" easing="ease-in-out" />
+        <animation name="expand" duration="@animation_duration" easing="ease-out" />
+        <animation name="quick_change_debounce" duration="100" easing="linear" />
+        
+        <!-- Text styles -->
+        <text name="menu_title" font_size="@font_main" color="@text_main" bold="true" />
+        <text name="menu_item" font_size="@font_sub" color="@unselected" />
+        <text name="menu_item_selected" font_size="@font_sub" color="@selected" bold="true" />
+        <text name="menu_item_collapsed" font_size="@font_main" color="@unselected" align="center" truncate="1" />
+        <text name="value_text" font_size="@font_sub" color="@unselected_dim" />
+        <text name="value_selected" font_size="@font_sub" color="@selected" />
+        <text name="value_current" font_size="@font_sub" color="@selected" bold="true" suffix=" *" />
+        <text name="stat_label" font_size="@font_stats" color="#B4B4B4" truncate="3" />
+        <text name="stat_value" font_size="@font_stats" color="@text_main" />
+        <text name="loading" font_size="24" color="#FFFFFF" align="center" />
+        <text name="countdown" font_size="120" color="#FFFFFF" align="center" shadow_color="#000000" shadow_offset="4" />
+        <text name="timelapse_status" font_size="10" color="#FF3232" />
+        <text name="group_header" font_size="@font_sub" color="@selected" bold="true" />
+        
+        <!-- Border styles -->
+        <border name="selection" width="1" color="@selected" radius="4" />
+        <border name="selection_subtle" width="1" color="@selected" radius="2" opacity="0.5" />
+        <border name="container" width="0" color="transparent" radius="0" />
+        <border name="range_track" width="2" color="#444444" radius="2" />
+        <border name="range_fill" width="2" color="@selected" radius="2" />
+        <border name="group_border" width="1" color="#333333" radius="4" />
     </style>
 
-    <!-- Default configuration (fallback) -->
+    <!-- ============================================ -->
+    <!-- GLOBAL CONFIGURATION -->
+    <!-- ============================================ -->
     <config>
+        <!-- Default widths for menu levels -->
         <widths level_0="@level_0_width" level_1="@level_1_width" level_2="@level_2_width" collapsed="@collapsed_width" />
         <animation duration="@animation_duration" />
+        
+        <!-- Camera modes available for cycling -->
+        <modes>auto,manual,timelapse</modes>
+        
+        <!-- Icon aliases: map setting names to icon filenames -->
+        <icon_aliases>
+            <alias from="exposurecomp" to="exposure" />
+            <alias from="imagedenoise" to="denoise" />
+            <alias from="exposure" to="mode" />
+            <alias from="cameramode" to="mode" />
+        </icon_aliases>
+        
+        <!-- Mode colors for stats display -->
+        <mode_colors>
+            <color mode="auto" value="#00FFFF" />
+            <color mode="manual" value="#FFC864" />
+            <color mode="timelapse" value="#64FF64" />
+        </mode_colors>
+        
+        <!-- Navigation behavior -->
+        <navigation>
+            <wrap_menus>true</wrap_menus>
+            <wrap_items>true</wrap_items>
+            <auto_collapse_delay>0</auto_collapse_delay>
+        </navigation>
+        
+        <!-- Startup defaults -->
+        <startup>
+            <show_stats>true</show_stats>
+            <show_menu>false</show_menu>
+        </startup>
+        
+        <!-- Icon configuration -->
+        <icons path="src/ui/icons" extension=".svg" />
+        
+        <!-- Text scroll behavior for long items -->
+        <text_scroll speed="0.05" pause_ms="1000" />
+        
+        <!-- Value formatting rules -->
+        <formatters>
+            <format key="shutter" type="shutter_speed" />
+            <format key="resolution" type="resolution" separator="×" />
+            <format key="exposurecomp" type="signed_number" />
+        </formatters>
     </config>
-
-    <!-- Shared Stats Strip Template -->
-    <template id="stats_strip">
-        <container id="stats" x="0" y="88%" width="100%" height="12%" 
-                   bg_color="@stats_bg" 
-                   font_size="@font_stats" 
-                   color="@text_main"
-                   icon_size="@icon_size"
-                   spacing="@stats_spacing"
-                   padding="15"
-                   padding_right="15"
-                   selection_alpha="60"
-                   selection_border_width="1"
-                   selection_padding_x="5"
-                   selection_padding_y="3"
-                   label_color="#B4B4B4"
-                   label_truncate="3"
-                   icon_gap="5"
-                   value_transition="stat_change" />
-    </template>
-
+    
     <!-- ============================================ -->
-    <!-- MODE: Default -->
+    <!-- DATA SLOTS - Runtime data injection points -->
     <!-- ============================================ -->
-    <mode name="default">
-        <config>
-            <widths level_0="@level_0_width" level_1="@level_1_width" level_2="@level_2_width" collapsed="@collapsed_width" />
-        </config>
+    <slots>
+        <!-- 
+            Slots define WHERE runtime data gets bound.
+            Python code injects collections/values at runtime.
+            XML defines the structure, Python provides the data.
+        -->
         
-        <container id="level_0" x="0" y="0" width="@level_0_width" height="100%" 
-                   orientation="vertical" 
-                   item_height="@item_height_main" 
-                   font_size="@font_main"
-                   bg_color="@menu_bg_level_0" 
-                   selected_color="@selected" 
-                   unselected_color="@unselected" 
-                   selection_bg_color="@selection_bg"
-                   padding="10"
-                   transition="menu_transition" />
-
-        <container id="level_1" x="@level_0_width" y="0" width="@level_1_width" height="100%" 
-                   orientation="vertical" 
-                   item_height="@item_height_sub" 
-                   font_size="@font_sub"
-                   bg_color="@menu_bg_level_1" 
-                   selected_color="@selected" 
-                   unselected_color="@unselected_dim" 
-                   selection_bg_color="@selection_bg"
-                   padding="10"
-                   transition="menu_transition" />
-
-        <container id="level_2" x="460" y="0" width="@level_2_width" height="100%" 
-                   orientation="vertical" 
-                   item_height="@item_height_sub" 
-                   font_size="@font_sub"
-                   bg_color="@menu_bg_level_2" 
-                   selected_color="@selected" 
-                   unselected_color="@unselected_dim" 
-                   selection_bg_color="@selection_bg"
-                   padding="10"
-                   transition="menu_transition" />
-
-        <use template="stats_strip" />
-    </mode>
+        <!-- Menu data slots -->
+        <slot name="menus" type="collection" description="Main menu items" />
+        <slot name="submenu" type="collection" description="Current submenu items" />
+        <slot name="options" type="collection" description="Current option values" />
+        
+        <!-- Selection state slots -->
+        <slot name="menu_index" type="int" default="0" />
+        <slot name="submenu_index" type="int" default="0" />
+        <slot name="option_index" type="int" default="0" />
+        <slot name="level" type="int" default="0" />
+        
+        <!-- Camera data slots -->
+        <slot name="camera_stats" type="dict" description="Live camera stat values from directory()" />
+        <slot name="current_mode" type="string" default="auto" />
+        
+        <!-- Gallery data slots -->
+        <slot name="gallery_images" type="collection" />
+        <slot name="gallery_index" type="int" default="0" />
+        
+        <!-- State slots -->
+        <slot name="menu_visible" type="bool" default="true" />
+        <slot name="quick_menu_index" type="int" default="0" />
+        <slot name="timer_remaining" type="float" default="0" />
+        <slot name="timelapse_count" type="int" default="0" />
+    </slots>
 
     <!-- ============================================ -->
-    <!-- MODE: Auto -->
+    <!-- COMPONENTS - Composite UI Elements -->
     <!-- ============================================ -->
-    <mode name="auto">
-        <config>
+    <components>
+        <!-- Menu Column: A collapsible vertical menu list -->
+        <component name="menu_column" extends="panel">
+            <property name="collapsed_width" type="int" default="60" />
+            <property name="expanded_width" type="int" default="200" />
+            <property name="collapse_animation" type="string" default="collapse" />
+            <property name="expand_animation" type="string" default="expand" />
+            <property name="collapsed_content" type="enum" values="icon,letter,none" default="icon" />
+            
+            <structure>
+                <list orientation="vertical" item_height="@item_height">
+                    <item_template>
+                        <panel class="menu_item_row" height="@item_height" padding_x="10">
+                            <icon src="@item.icon" size="@icon_size" when="not_collapsed" />
+                            <icon src="@item.icon" size="@icon_size" align="center" when="collapsed" fallback="@item.name[0]" />
+                            <text content="@item.displayname" style="menu_item" when="not_collapsed" />
+                            <chevron direction="right" when="has_children and not_collapsed" />
+                            <border style="selection" when="selected" />
+                        </panel>
+                    </item_template>
+                </list>
+            </structure>
+            
+            <states>
+                <state name="expanded" width="@expanded_width" />
+                <state name="collapsed" width="@collapsed_width" />
+                <state name="hidden" width="0" />
+            </states>
+        </component>
+        
+        <!-- Value List: List for selecting values -->
+        <component name="value_list" extends="panel">
+            <structure>
+                <list orientation="vertical" item_height="@item_height_sub">
+                    <item_template>
+                        <panel class="value_item_row" height="@item_height_sub" padding_x="10">
+                            <text content="@item.displayname" style="value_text" />
+                            <text content=" *" style="value_current" when="is_current_value" />
+                            <border style="selection_subtle" when="selected" />
+                        </panel>
+                    </item_template>
+                </list>
+            </structure>
+        </component>
+        
+        <!-- Range Editor: Slider with value display -->
+        <component name="range_editor" extends="panel">
+            <structure>
+                <panel class="range_container" padding="10">
+                    <text content="@current_value : @preview_value" style="value_selected" align="center" />
+                    <spacer size="10" />
+                    <slider min="@option.min" max="@option.max" step="@option.step" value="@option.value"
+                            track_color="#444444" fill_color="@selected" />
+                    <panel class="range_labels" layout="row" justify="space-between">
+                        <text content="@option.min" style="value_text" />
+                        <text content="@option.max" style="value_text" />
+                    </panel>
+                </panel>
+            </structure>
+        </component>
+        
+        <!-- Stats Strip: Bottom status bar -->
+        <component name="stats_strip" extends="panel">
+            <property name="stats_list" type="array" default="[]" />
+            <property name="editable" type="bool" default="true" />
+            
+            <structure>
+                <panel x="0" y="88%" width="100%" height="12%" bg_color="@stats_bg" padding="15">
+                    <list orientation="horizontal" item_spacing="@stats_spacing">
+                        <item_template>
+                            <panel class="stat_item" padding_x="5">
+                                <icon src="@stat.icon" size="@icon_size" />
+                                <text content="@stat.value" style="stat_value" />
+                                <border style="selection" when="selected and editable" />
+                            </panel>
+                        </item_template>
+                    </list>
+                    <spacer flex="1" />
+                    <list orientation="horizontal" item_spacing="@stats_spacing" align="right">
+                        <!-- Right-aligned stats like resolution, storage -->
+                    </list>
+                </panel>
+            </structure>
+        </component>
+        
+        <!-- Group Header: Collapsible group in menu -->
+        <component name="group_header" extends="panel">
+            <property name="expanded" type="bool" default="true" />
+            
+            <structure>
+                <panel class="group_header_row" height="@item_height" padding_x="10" bg_color="#00000022">
+                    <chevron direction="down" when="expanded" />
+                    <chevron direction="right" when="not_expanded" />
+                    <text content="@group.displayname" style="group_header" />
+                </panel>
+            </structure>
+        </component>
+        
+        <!-- Icon Button: Icon-only button for collapsed menus -->
+        <component name="icon_button" extends="panel">
+            <structure>
+                <panel class="icon_button" width="@collapsed_width" height="@item_height" align="center">
+                    <icon src="@item.icon" size="@icon_size" fallback="@item.name[0]" />
+                    <border style="selection" when="selected" />
+                </panel>
+            </structure>
+        </component>
+        
+        <!-- Action Button: Full button with label -->
+        <component name="action_button" extends="panel">
+            <property name="variant" type="enum" values="default,primary,danger" default="default" />
+            
+            <structure>
+                <panel class="action_button @variant" height="@item_height" padding_x="15" border_radius="4">
+                    <icon src="@item.icon" size="@icon_size" when="has_icon" />
+                    <text content="@item.displayname" style="menu_item" />
+                </panel>
+            </structure>
+            
+            <variants>
+                <variant name="default" bg_color="transparent" text_color="@unselected" />
+                <variant name="primary" bg_color="@selected" text_color="@text_main" />
+                <variant name="danger" bg_color="#661111" text_color="#FF6666" />
+            </variants>
+        </component>
+        
+        <!-- Gallery Thumbnail: Image thumbnail in gallery -->
+        <component name="gallery_thumbnail" extends="panel">
+            <structure>
+                <panel class="thumbnail" width="@thumb_size" height="@thumb_size" border_radius="4">
+                    <image src="@item.thumbnail" fit="cover" />
+                    <border style="selection" when="selected" />
+                </panel>
+            </structure>
+        </component>
+        
+        <!-- Modal Dialog: Overlay dialog -->
+        <component name="modal_dialog" extends="panel">
+            <structure>
+                <panel class="modal_backdrop" width="100%" height="100%" bg_color="#00000088">
+                    <panel class="modal_content" width="80%" max_width="400" align="center" valign="middle"
+                           bg_color="@menu_bg_level_1" border_radius="8" padding="20">
+                        <text content="@title" style="menu_title" />
+                        <spacer size="15" />
+                        <slot name="content" />
+                        <spacer size="15" />
+                        <panel class="modal_actions" layout="row" justify="end" spacing="10">
+                            <slot name="actions" />
+                        </panel>
+                    </panel>
+                </panel>
+            </structure>
+        </component>
+    </components>
+
+    <!-- ============================================ -->
+    <!-- TEMPLATES - Reusable container configurations -->
+    <!-- ============================================ -->
+    <templates>
+        <!-- Stats Strip Template -->
+        <template id="stats_strip">
+            <container id="stats" x="0" y="88%" width="100%" height="12%" 
+                       bg_color="@stats_bg" 
+                       font_size="@font_stats" 
+                       color="@text_main"
+                       icon_size="@icon_size"
+                       spacing="@stats_spacing"
+                       padding="15"
+                       padding_right="15"
+                       selection_alpha="60"
+                       selection_border_width="1"
+                       selection_padding_x="5"
+                       selection_padding_y="3"
+                       label_color="#B4B4B4"
+                       label_truncate="3"
+                       icon_gap="5"
+                       value_transition="stat_change" />
+        </template>
+        
+        <!-- Menu Item Template -->
+        <template id="menu_item">
+            <item padding_x="10" padding_y="8">
+                <icon size="@icon_size" gap="8" />
+                <text style="menu_item" />
+                <border style="selection" visible_when="selected" />
+            </item>
+        </template>
+        
+        <!-- Range Slider Template -->
+        <template id="range_slider">
+            <range height="40" padding="10">
+                <track height="4" bg_color="#333333" border="range_track" />
+                <fill bg_color="@selected" border="range_fill" />
+                <label style="value_text" position="right" />
+            </range>
+        </template>
+        
+        <!-- Collapsed Menu Item Template -->
+        <template id="collapsed_menu_item">
+            <item padding_x="0" padding_y="8" align="center">
+                <icon size="@icon_size" fallback_style="menu_item_collapsed" />
+                <border style="selection" visible_when="selected" />
+            </item>
+        </template>
+    </templates>
+    
+    <!-- ============================================ -->
+    <!-- OVERLAYS - Modal/temporary UI elements -->
+    <!-- ============================================ -->
+    <overlays>
+        <!-- Timer Countdown Overlay -->
+        <overlay id="timer_countdown" visible_when="timer_active"
+                 x="50%" y="50%" font_size="120" color="#FFFFFF"
+                 shadow="true" shadow_color="#000000" shadow_offset="4"
+                 centered="true">
+            <container x="center" y="center" align="center">
+                <text content="{timer_remaining}" style="countdown" />
+            </container>
+        </overlay>
+        
+        <!-- Timelapse Status Overlay -->
+        <overlay id="timelapse_status" visible_when="timelapse_active"
+                 x="10" y="10" font_size="16" color="#FF3232">
+            <container x="10" y="10">
+                <text content="TL: {timelapse_count}" style="timelapse_status" />
+            </container>
+        </overlay>
+        
+        <!-- Flash Effect Overlay -->
+        <overlay id="flash_effect" visible_when="flash_active" duration="@flash_duration">
+            <container x="0" y="0" width="100%" height="100%" bg_color="#FFFFFF" />
+        </overlay>
+        
+        <!-- Loading Screen Overlay -->
+        <overlay id="loading" visible_when="loading"
+                 x="50%" y="50%" font_size="24" color="#FFFFFF" centered="true">
+            <container x="0" y="0" width="100%" height="100%" bg_color="#000000">
+                <text content="Initializing Camera..." style="loading" x="center" y="center" />
+            </container>
+        </overlay>
+    </overlays>
+
+    <!-- ============================================ -->
+    <!-- MENU DEFINITIONS -->
+    <!-- ============================================ -->
+    <menus>
+        <!-- AUTO MODE -->
+        <menu name="auto" displayname="Auto" icon="icons/auto.png">
+            <item name="exposurecomp" displayname="Exposure Comp" type="range" 
+                  min="-25" max="25" step="5" value="0" />
+            
+            <item name="exposure" displayname="Scene Mode" type="list" value="auto">
+                <option value="auto" displayname="Auto" />
+                <option value="night" displayname="Night" />
+                <option value="backlight" displayname="Backlight" />
+                <option value="sports" displayname="Sports" />
+                <option value="snow" displayname="Snow" />
+                <option value="beach" displayname="Beach" />
+                <option value="fireworks" displayname="Fireworks" />
+                <option value="antishake" displayname="Anti-Shake" />
+            </item>
+            
+            <item name="imageeffect" displayname="Effect" type="list" value="none">
+                <option value="none" displayname="None" />
+                <option value="negative" displayname="Negative" />
+                <option value="solarize" displayname="Solarize" />
+                <option value="sketch" displayname="Sketch" />
+                <option value="emboss" displayname="Emboss" />
+                <option value="oilpaint" displayname="Oil Paint" />
+                <option value="pastel" displayname="Pastel" />
+                <option value="watercolor" displayname="Watercolor" />
+                <option value="film" displayname="Film" />
+                <option value="cartoon" displayname="Cartoon" />
+                <option value="posterise" displayname="Posterize" />
+            </item>
+            
+            <item name="resolution" displayname="Resolution" type="list" value="1920,1080">
+                <option value="1280,720" displayname="720p (1280x720)" />
+                <option value="1920,1080" displayname="1080p (1920x1080)" />
+                <option value="2560,1440" displayname="2K (2560x1440)" />
+                <option value="3840,2160" displayname="4K (3840x2160)" />
+                <option value="4056,3040" displayname="Full (4056x3040)" />
+            </item>
+            
+            <item name="quality" displayname="Quality" type="range" 
+                  min="10" max="100" step="10" value="80" />
+        </menu>
+
+        <!-- MANUAL MODE -->
+        <menu name="manual" displayname="Manual" icon="icons/manual.png">
+            <group name="exposure_group" displayname="Exposure">
+                <item name="shutter" displayname="Shutter Speed" type="range"
+                      min="100" max="32000" step="500" value="8000" 
+                      format="{value}µs" />
+                
+                <item name="iso" displayname="ISO" type="range"
+                      min="100" max="1600" step="100" value="400" />
+                
+                <item name="exposurecomp" displayname="Exposure Comp" type="range"
+                      min="-25" max="25" step="5" value="0" />
+                
+                <item name="exposure" displayname="Metering Mode" type="list" value="off">
+                    <option value="off" displayname="Off (Full Manual)" />
+                    <option value="auto" displayname="Auto" />
+                    <option value="night" displayname="Night" />
+                    <option value="spotlight" displayname="Spotlight" />
+                    <option value="verylong" displayname="Long Exposure" />
+                </item>
+            </group>
+            
+            <group name="color_group" displayname="Color / WB">
+                <item name="awb" displayname="White Balance" type="list" value="auto">
+                    <option value="off" displayname="Off" />
+                    <option value="auto" displayname="Auto" />
+                    <option value="sunlight" displayname="Sunlight" />
+                    <option value="cloudy" displayname="Cloudy" />
+                    <option value="shade" displayname="Shade" />
+                    <option value="tungsten" displayname="Tungsten" />
+                    <option value="fluorescent" displayname="Fluorescent" />
+                    <option value="flash" displayname="Flash" />
+                </item>
+                
+                <item name="saturation" displayname="Saturation" type="range"
+                      min="-100" max="100" step="25" value="0" />
+            </group>
+            
+            <group name="lens_group" displayname="Image Adjust">
+                <item name="brightness" displayname="Brightness" type="range"
+                      min="0" max="100" step="10" value="50" />
+                
+                <item name="contrast" displayname="Contrast" type="range"
+                      min="-100" max="100" step="20" value="0" />
+                
+                <item name="sharpness" displayname="Sharpness" type="range"
+                      min="-100" max="100" step="25" value="0" />
+            </group>
+        </menu>
+
+        <!-- IMAGE SETTINGS -->
+        <menu name="image_settings" displayname="Image" icon="icons/image.png">
+            <item name="resolution" displayname="Resolution" type="list" value="1920,1080">
+                <option value="1280,720" displayname="720p (1280x720)" />
+                <option value="1920,1080" displayname="1080p (1920x1080)" />
+                <option value="2560,1440" displayname="2K (2560x1440)" />
+                <option value="3840,2160" displayname="4K (3840x2160)" />
+                <option value="4000,3000" displayname="4:3 (4000x3000)" />
+                <option value="4056,3040" displayname="Full (4056x3040)" />
+                <option value="2000,2000" displayname="Square 2K" />
+                <option value="3000,3000" displayname="Square 3K" />
+            </item>
+            
+            <item name="imageformat" displayname="Format" type="list" value="jpeg">
+                <option value="jpeg" displayname="JPEG" />
+                <option value="png" displayname="PNG" />
+                <option value="bmp" displayname="BMP" />
+                <option value="raw" displayname="RAW" />
+            </item>
+            
+            <item name="quality" displayname="Quality" type="range"
+                  min="10" max="100" step="10" value="80" />
+            
+            <item name="denoise" displayname="Denoise" type="list" value="true">
+                <option value="true" displayname="On" />
+                <option value="false" displayname="Off" />
+            </item>
+            
+            <item name="dynamicRangeCompression" displayname="HDR" type="list" value="off">
+                <option value="off" displayname="Off" />
+                <option value="low" displayname="Low" />
+                <option value="medium" displayname="Medium" />
+                <option value="high" displayname="High" />
+            </item>
+        </menu>
+
+        <!-- SHOOTING -->
+        <menu name="shooting" displayname="Shooting" icon="icons/shooting.png">
+            <item name="mode" displayname="Mode" type="list" value="single">
+                <option value="single" displayname="Single Shot" />
+                <option value="burst" displayname="Burst" />
+                <option value="timelapse" displayname="Timelapse" />
+            </item>
+            
+            <item name="burst_count" displayname="Burst Count" type="range"
+                  min="3" max="10" step="1" value="5" />
+            
+            <item name="timelapse_interval" displayname="TL Interval (s)" type="range"
+                  min="1" max="60" step="1" value="5" />
+            
+            <item name="timelapse_count" displayname="TL Count" type="range"
+                  min="10" max="1000" step="10" value="100" />
+        </menu>
+
+        <!-- SYSTEM -->
+        <menu name="system" displayname="System" icon="icons/system.png">
+            <item name="display_brightness" displayname="Display" type="range"
+                  min="10" max="100" step="10" value="80" />
+            
+            <item name="preview_fps" displayname="Preview FPS" type="list" value="24">
+                <option value="15" displayname="15 fps" />
+                <option value="24" displayname="24 fps" />
+                <option value="30" displayname="30 fps" />
+            </item>
+            
+            <item name="reset_settings" displayname="Reset Settings" type="list" value="no"
+                  style="danger">
+                <option value="no" displayname="Cancel" />
+                <option value="yes" displayname="Confirm Reset" style="danger" />
+            </item>
+        </menu>
+
+        <!-- GALLERY (Action only) -->
+        <menu name="gallery" displayname="Gallery" icon="icons/gallery.png" type="action" 
+              action="open_gallery" />
+    </menus>
+
+    <!-- ============================================ -->
+    <!-- QUICK STATS CONFIGURATION -->
+    <!-- ============================================ -->
+    <stats>
+        <modes>
+            <mode name="auto" stats="cameramode,exposure,resolution,quality" />
+            <mode name="manual" stats="cameramode,iso,shutter,awb,exposurecomp" />
+            <mode name="timelapse" stats="cameramode,timelapse_interval,timelapse_count" />
+        </modes>
+        <available>cameramode,iso,shutter,awb,exposurecomp,resolution,quality,exposure,imageeffect</available>
+        
+        <!-- Stats display positions -->
+        <display>
+            <left>cameramode,iso,shutter,awb,exposurecomp</left>
+            <right>resolution,filesize,remaining</right>
+        </display>
+    </stats>
+
+    <!-- ============================================ -->
+    <!-- LAYOUTS - Screen Composition Using Components -->
+    <!-- ============================================ -->
+    <layouts>
+        <!-- 
+            Layout Types:
+            - multi_column: Traditional 3-column collapsible menu (current default)
+            - single_panel: Full-screen single panel navigation
+            - overlay: Modal/popup style menus
+        -->
+        
+        <!-- Default Multi-Column Layout -->
+        <layout name="default" type="multi_column">
+            <columns>
+                <!-- Level 0: Main menu (collapsible) -->
+                <column id="level_0" level="0">
+                    <expanded width="@level_0_width" />
+                    <collapsed width="@collapsed_width" />
+                    <collapse_when>level > 0</collapse_when>
+                    <style 
+                        bg_color="@menu_bg_level_0"
+                        selected_color="@selected"
+                        unselected_color="@unselected"
+                        selection_bg_color="@selection_bg"
+                        font_size="@font_main"
+                        item_height="@item_height_main"
+                        padding="10"
+                        orientation="vertical"
+                        transition="menu_transition" />
+                    <collapsed_style
+                        content_mode="icon"
+                        fallback_mode="letter"
+                        align="center" />
+                </column>
+                
+                <!-- Level 1: Submenu (collapsible) -->
+                <column id="level_1" level="1">
+                    <expanded width="@level_1_width" />
+                    <collapsed width="@collapsed_width" />
+                    <collapse_when>level > 1</collapse_when>
+                    <visible_when>level >= 1</visible_when>
+                    <style
+                        bg_color="@menu_bg_level_1"
+                        selected_color="@selected"
+                        unselected_color="@unselected_dim"
+                        selection_bg_color="@selection_bg"
+                        font_size="@font_sub"
+                        item_height="@item_height_sub"
+                        padding="10"
+                        orientation="vertical"
+                        transition="menu_transition" />
+                    <collapsed_style
+                        content_mode="icon"
+                        fallback_mode="letter"
+                        align="center" />
+                </column>
+                
+                <!-- Level 2: Values/Options -->
+                <column id="level_2" level="2">
+                    <expanded width="@level_2_width" />
+                    <visible_when>level >= 2</visible_when>
+                    <style
+                        bg_color="@menu_bg_level_2"
+                        selected_color="@selected"
+                        unselected_color="@unselected_dim"
+                        selection_bg_color="@selection_bg"
+                        font_size="@font_sub"
+                        item_height="@item_height_sub"
+                        padding="10"
+                        orientation="vertical"
+                        transition="menu_transition" />
+                    <!-- Range type items use different rendering -->
+                    <range_style
+                        track_color="#444444"
+                        fill_color="@selected"
+                        handle_color="@text_main"
+                        label_style="value_text" />
+                </column>
+            </columns>
+            
+            <!-- Stats strip at bottom -->
+            <footer>
+                <use template="stats_strip" />
+            </footer>
+        </layout>
+        
+        <!-- Gallery Layout -->
+        <layout name="gallery" type="multi_column">
+            <config>
+                <behavior auto_collapse="false" />
+            </config>
+            
+            <columns>
+                <column id="level_0" level="0">
+                    <expanded width="60" />
+                    <collapsed width="60" />
+                    <collapse_when>never</collapse_when>
+                    <style
+                        bg_color="#00000088"
+                        selected_color="@selected"
+                        unselected_color="@unselected"
+                        selection_bg_color="@selection_bg"
+                        font_size="@font_main"
+                        item_height="60"
+                        padding="10"
+                        orientation="vertical"
+                        transition="menu_transition" />
+                    <collapsed_style
+                        content_mode="icon"
+                        fallback_mode="letter"
+                        align="center" />
+                </column>
+                
+                <!-- Hidden columns for gallery mode -->
+                <column id="level_1" level="1">
+                    <expanded width="0" />
+                    <visible_when>false</visible_when>
+                </column>
+                
+                <column id="level_2" level="2">
+                    <expanded width="0" />
+                    <visible_when>false</visible_when>
+                </column>
+            </columns>
+            
+            <!-- Gallery viewer area -->
+            <content>
+                <container id="gallery_viewer" x="60" y="0" width="calc(100% - 60)" height="88%"
+                           bg_color="#000000"
+                           transition="gallery_slide" />
+            </content>
+            
+            <footer>
+                <use template="stats_strip" />
+            </footer>
+        </layout>
+    </layouts>
+
+    <!-- ============================================ -->
+    <!-- MODE OVERRIDES - Per-menu layout tweaks -->
+    <!-- ============================================ -->
+    <mode_overrides>
+        <mode name="auto">
+            <column id="level_1">
+                <style font_size="22" item_height="55" bg_color="#0A1A1AEE" 
+                       unselected_color="#CCCCCC" selection_bg_color="#00666644" padding="12" />
+            </column>
             <widths level_0="200" level_1="300" level_2="260" collapsed="60" />
-        </config>
+        </mode>
         
-        <container id="level_0" x="0" y="0" width="200" height="100%" 
-                   orientation="vertical" 
-                   item_height="60" 
-                   font_size="@font_main"
-                   bg_color="@menu_bg_level_0" 
-                   selected_color="@selected" 
-                   unselected_color="@unselected" 
-                   selection_bg_color="@selection_bg"
-                   padding="10"
-                   transition="menu_transition" />
-
-        <container id="level_1" x="200" y="0" width="300" height="100%" 
-                   orientation="vertical" 
-                   item_height="55" 
-                   font_size="22"
-                   bg_color="#0A1A1AEE" 
-                   selected_color="@selected" 
-                   unselected_color="#CCCCCC" 
-                   selection_bg_color="#00666644"
-                   padding="12"
-                   transition="menu_transition" />
-
-        <container id="level_2" x="500" y="0" width="260" height="100%" 
-                   orientation="vertical" 
-                   item_height="50" 
-                   font_size="@font_sub"
-                   bg_color="@menu_bg_level_2" 
-                   selected_color="@selected" 
-                   unselected_color="@unselected_dim" 
-                   selection_bg_color="@selection_bg"
-                   padding="10"
-                   transition="menu_transition" />
-
-        <use template="stats_strip" />
-    </mode>
-
-    <!-- ============================================ -->
-    <!-- MODE: Manual -->
-    <!-- ============================================ -->
-    <mode name="manual">
-        <config>
+        <mode name="manual">
+            <column id="level_2">
+                <style bg_color="#1A1A22DD" />
+            </column>
             <widths level_0="200" level_1="240" level_2="280" collapsed="60" />
-        </config>
+        </mode>
         
-        <container id="level_0" x="0" y="0" width="200" height="100%" 
-                   orientation="vertical" 
-                   item_height="60" 
-                   font_size="@font_main"
-                   bg_color="@menu_bg_level_0" 
-                   selected_color="@selected" 
-                   unselected_color="@unselected" 
-                   selection_bg_color="@selection_bg"
-                   padding="10"
-                   transition="menu_transition" />
-
-        <container id="level_1" x="200" y="0" width="240" height="100%" 
-                   orientation="vertical" 
-                   item_height="50" 
-                   font_size="@font_sub"
-                   bg_color="@menu_bg_level_1" 
-                   selected_color="@selected" 
-                   unselected_color="@unselected_dim" 
-                   selection_bg_color="@selection_bg"
-                   padding="10"
-                   transition="menu_transition" />
-
-        <container id="level_2" x="440" y="0" width="280" height="100%" 
-                   orientation="vertical" 
-                   item_height="50" 
-                   font_size="@font_sub"
-                   bg_color="#1A1A22DD" 
-                   selected_color="@selected" 
-                   unselected_color="@unselected_dim" 
-                   selection_bg_color="@selection_bg"
-                   padding="10"
-                   transition="menu_transition" />
-
-        <use template="stats_strip" />
-    </mode>
-
-    <!-- ============================================ -->
-    <!-- MODE: Image Settings -->
-    <!-- ============================================ -->
-    <mode name="image_settings">
-        <config>
+        <mode name="image_settings">
             <widths level_0="200" level_1="260" level_2="300" collapsed="60" />
-        </config>
+        </mode>
         
-        <container id="level_0" x="0" y="0" width="200" height="100%" 
-                   orientation="vertical" 
-                   item_height="60" 
-                   font_size="@font_main"
-                   bg_color="@menu_bg_level_0" 
-                   selected_color="@selected" 
-                   unselected_color="@unselected" 
-                   selection_bg_color="@selection_bg"
-                   padding="10"
-                   transition="menu_transition" />
-
-        <container id="level_1" x="200" y="0" width="260" height="100%" 
-                   orientation="vertical" 
-                   item_height="50" 
-                   font_size="@font_sub"
-                   bg_color="@menu_bg_level_1" 
-                   selected_color="@selected" 
-                   unselected_color="@unselected_dim" 
-                   selection_bg_color="@selection_bg"
-                   padding="10"
-                   transition="menu_transition" />
-
-        <container id="level_2" x="460" y="0" width="300" height="100%" 
-                   orientation="vertical" 
-                   item_height="50" 
-                   font_size="@font_sub"
-                   bg_color="@menu_bg_level_2" 
-                   selected_color="@selected" 
-                   unselected_color="@unselected_dim" 
-                   selection_bg_color="@selection_bg"
-                   padding="10"
-                   transition="menu_transition" />
-
-        <use template="stats_strip" />
-    </mode>
-
-    <!-- ============================================ -->
-    <!-- MODE: Shooting -->
-    <!-- ============================================ -->
-    <mode name="shooting">
-        <config>
+        <mode name="shooting">
+            <column id="level_1">
+                <style font_size="22" item_height="55" />
+            </column>
             <widths level_0="200" level_1="280" level_2="260" collapsed="60" />
-        </config>
+        </mode>
         
-        <container id="level_0" x="0" y="0" width="200" height="100%" 
-                   orientation="vertical" 
-                   item_height="60" 
-                   font_size="@font_main"
-                   bg_color="@menu_bg_level_0" 
-                   selected_color="@selected" 
-                   unselected_color="@unselected" 
-                   selection_bg_color="@selection_bg"
-                   padding="10"
-                   transition="menu_transition" />
-
-        <container id="level_1" x="200" y="0" width="280" height="100%" 
-                   orientation="vertical" 
-                   item_height="55" 
-                   font_size="22"
-                   bg_color="@menu_bg_level_1" 
-                   selected_color="@selected" 
-                   unselected_color="@unselected_dim" 
-                   selection_bg_color="@selection_bg"
-                   padding="10"
-                   transition="menu_transition" />
-
-        <container id="level_2" x="480" y="0" width="260" height="100%" 
-                   orientation="vertical" 
-                   item_height="50" 
-                   font_size="@font_sub"
-                   bg_color="@menu_bg_level_2" 
-                   selected_color="@selected" 
-                   unselected_color="@unselected_dim" 
-                   selection_bg_color="@selection_bg"
-                   padding="10"
-                   transition="menu_transition" />
-
-        <use template="stats_strip" />
-    </mode>
-
-    <!-- ============================================ -->
-    <!-- MODE: System -->
-    <!-- ============================================ -->
-    <mode name="system">
-        <config>
+        <mode name="system">
+            <!-- Danger styling for level 2 when showing reset confirmation -->
+            <column id="level_2" context="danger">
+                <style selected_color="#FF6666" selection_bg_color="#44000044" />
+            </column>
             <widths level_0="200" level_1="260" level_2="260" collapsed="60" />
-        </config>
-        
-        <container id="level_0" x="0" y="0" width="200" height="100%" 
-                   orientation="vertical" 
-                   item_height="60" 
-                   font_size="@font_main"
-                   bg_color="@menu_bg_level_0" 
-                   selected_color="@selected" 
-                   unselected_color="@unselected" 
-                   selection_bg_color="@selection_bg"
-                   padding="10"
-                   transition="menu_transition" />
-
-        <container id="level_1" x="200" y="0" width="260" height="100%" 
-                   orientation="vertical" 
-                   item_height="55" 
-                   font_size="@font_sub"
-                   bg_color="@menu_bg_level_1" 
-                   selected_color="@selected" 
-                   unselected_color="@unselected_dim" 
-                   selection_bg_color="@selection_bg"
-                   padding="10"
-                   transition="menu_transition" />
-
-        <!-- Confirmations use red highlight for danger actions -->
-        <container id="level_2" x="460" y="0" width="260" height="100%" 
-                   orientation="vertical" 
-                   item_height="50" 
-                   font_size="@font_sub"
-                   bg_color="@menu_bg_level_2" 
-                   selected_color="#FF6666" 
-                   unselected_color="@unselected_dim" 
-                   selection_bg_color="#44000044"
-                   padding="10"
-                   transition="menu_transition" />
-
-        <use template="stats_strip" />
-    </mode>
-
-    <!-- ============================================ -->
-    <!-- MODE: Gallery -->
-    <!-- ============================================ -->
-    <mode name="gallery">
-        <config>
-            <widths level_0="60" level_1="0" level_2="0" collapsed="60" />
-            <!-- Don't auto-collapse - use back/enter to exit gallery -->
-            <behavior auto_collapse="false" />
-        </config>
-        
-        <!-- Collapsed Main Menu only -->
-        <container id="level_0" x="0" y="0" width="60" height="100%" 
-                   orientation="vertical" 
-                   item_height="60" 
-                   font_size="@font_main"
-                   bg_color="#00000088" 
-                   selected_color="@selected" 
-                   unselected_color="@unselected" 
-                   selection_bg_color="@selection_bg"
-                   padding="10"
-                   transition="menu_transition" />
-
-        <!-- Hidden panels -->
-        <container id="level_1" x="60" y="0" width="0" height="100%" 
-                   orientation="vertical" 
-                   item_height="50" 
-                   font_size="@font_sub"
-                   bg_color="@menu_bg_level_1" 
-                   selected_color="@selected" 
-                   unselected_color="@unselected_dim" 
-                   selection_bg_color="@selection_bg"
-                   padding="10" />
-
-        <container id="level_2" x="60" y="0" width="0" height="100%" 
-                   orientation="vertical" 
-                   item_height="50" 
-                   font_size="@font_sub"
-                   bg_color="@menu_bg_level_2" 
-                   selected_color="@selected" 
-                   unselected_color="@unselected_dim" 
-                   selection_bg_color="@selection_bg"
-                   padding="10" />
-
-        <!-- Gallery-specific viewer panel -->
-        <container id="gallery_viewer" x="60" y="0" width="calc(100% - 60)" height="88%"
-                   bg_color="#000000"
-                   transition="gallery_slide" />
-
-        <use template="stats_strip" />
-    </mode>
+        </mode>
+    </mode_overrides>
 
 </layout>

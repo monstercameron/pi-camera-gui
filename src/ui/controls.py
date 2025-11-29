@@ -1,12 +1,19 @@
 import pygame
+import time
 from typing import Dict, Any, List, Optional
 
 class MenuController:
+    # Debounce state for quick stats value changes
+    _pending_quick_change: Dict[str, Any] = {}  # {option_name: {option, value, timestamp}}
+    _debounce_delay = 0.1  # 100ms debounce (default, overridden by XML)
+    _debounce_initialized = False
+    
     @staticmethod
-    def handle_event(pygame_mod, event, menu_pos: List[int], menus: Dict[str, Any], camera: Optional[Any] = None, menu_active: bool = True, quick_menu_pos: Optional[List[int]] = None, callbacks: Optional[Dict[str, Any]] = None, action: Optional[str] = None, settings: Optional[Dict[str, Any]] = None, settings_manager: Any = None):
+    def handle_event(pygame_mod, event, menu_pos: List[int], menus: Dict[str, Any], camera: Optional[Any] = None, menu_active: bool = True, quick_menu_pos: Optional[List[int]] = None, callbacks: Optional[Dict[str, Any]] = None, action: Optional[str] = None, settings: Optional[Dict[str, Any]] = None, settings_manager: Any = None, layout: Any = None):
         """
         Handles input events for menu navigation and value updates.
         menu_pos: [menu_index, submenu_index, option_index, level]
+        layout: Optional LayoutParser instance for getting modes/stats config
         """
         if action == "back":
             # If menu is active, back goes up a level
@@ -32,8 +39,8 @@ class MenuController:
                 MenuController._handle_enter(menu_pos, menus, camera, callbacks)
         elif quick_menu_pos is not None and camera is not None:
             # Quick Menu Logic (when main menu is inactive)
-            # Get mode-based quick stats from settings, filtered by available camera stats
-            quick_stats = MenuController._get_quick_stats(menu_pos, menus, settings, camera)
+            # Get mode-based quick stats from layout or settings, filtered by available camera stats
+            quick_stats = MenuController._get_quick_stats(menu_pos, menus, settings, camera, layout)
             num_stats = len(quick_stats)
             
             if action == "right":
@@ -41,9 +48,9 @@ class MenuController:
             elif action == "left":
                 quick_menu_pos[0] = (quick_menu_pos[0] - 1) % num_stats
             elif action == "up":
-                MenuController._handle_quick_value_change(1, quick_menu_pos[0], menus, camera, settings, settings_manager)
+                MenuController._handle_quick_value_change(1, quick_menu_pos[0], menus, camera, settings, settings_manager, layout)
             elif action == "down":
-                MenuController._handle_quick_value_change(-1, quick_menu_pos[0], menus, camera, settings, settings_manager)
+                MenuController._handle_quick_value_change(-1, quick_menu_pos[0], menus, camera, settings, settings_manager, layout)
 
         # Camera specific controls (e.g. Capture)
         if camera is not None:
@@ -54,15 +61,19 @@ class MenuController:
                     camera.controls(pygame_mod, event.key)
 
     @staticmethod
-    def _get_quick_stats(menu_pos: List[int], menus: Dict[str, Any], settings: Optional[Dict[str, Any]] = None, camera: Optional[Any] = None) -> List[str]:
+    def _get_quick_stats(menu_pos: List[int], menus: Dict[str, Any], settings: Optional[Dict[str, Any]] = None, camera: Optional[Any] = None, layout: Any = None) -> List[str]:
         """Get the quick stats list based on current mode, filtered to only include available stats."""
         # Determine current mode from settings
         current_mode = "auto"
         if settings:
             current_mode = settings.get("mode", {}).get("cameramode", "auto")
         
-        # Get quick stats from settings
-        if settings:
+        # Get quick stats from layout parser first, fallback to settings
+        if layout:
+            stats_list = layout.get_quick_stats_for_mode(current_mode)
+            if not stats_list:
+                stats_list = ["cameramode", "iso", "shutter", "awb", "exposurecomp"]
+        elif settings:
             stats_config = settings.get("stats", {})
             quick_stats_config = stats_config.get("quick_stats", {})
             stats_list = quick_stats_config.get(current_mode, ["cameramode", "iso", "shutter", "awb", "exposurecomp"])
@@ -267,14 +278,14 @@ class MenuController:
         return None
 
     @staticmethod
-    def _handle_quick_value_change(direction: int, stat_index: int, menus: Dict[str, Any], camera: Any, settings: Optional[Dict[str, Any]] = None, settings_manager: Any = None):
+    def _handle_quick_value_change(direction: int, stat_index: int, menus: Dict[str, Any], camera: Any, settings: Optional[Dict[str, Any]] = None, settings_manager: Any = None, layout: Any = None):
         # Get current mode from settings
         current_mode = "auto"
         if settings:
             current_mode = settings.get("mode", {}).get("cameramode", "auto")
         
         # Get filtered quick stats (only stats available in camera directory)
-        stat_names = MenuController._get_quick_stats([], menus, settings, camera)
+        stat_names = MenuController._get_quick_stats([], menus, settings, camera, layout)
         
         if stat_index >= len(stat_names):
             return
@@ -284,7 +295,12 @@ class MenuController:
         # Special handling for cameramode - cycle through modes
         if stat_name == "cameramode":
             if settings:
-                modes = settings.get("stats", {}).get("modes", ["auto", "manual", "timelapse"])
+                # Get modes from layout parser or fallback to settings/defaults
+                if layout:
+                    modes = layout.get_camera_modes()
+                else:
+                    modes = settings.get("stats", {}).get("modes", ["auto", "manual", "timelapse"])
+                
                 current_idx = modes.index(current_mode) if current_mode in modes else 0
                 
                 if direction > 0:  # UP -> Next mode
@@ -333,7 +349,8 @@ class MenuController:
             
             if new_val != current_val:
                 option["value"] = new_val
-                MenuController._apply_setting(camera, option)
+                # Queue the change with debounce instead of applying immediately
+                MenuController._queue_quick_change(option, new_val)
 
         elif option["type"] == "list":
             current_val = option["value"]
@@ -358,7 +375,46 @@ class MenuController:
                 
                 if new_val != current_val:
                     option["value"] = new_val
-                    MenuController._apply_setting(camera, option)
+                    # Queue the change with debounce instead of applying immediately
+                    MenuController._queue_quick_change(option, new_val)
+
+    @staticmethod
+    def _queue_quick_change(option: Dict[str, Any], value: Any):
+        """Queue a quick stats value change with debounce."""
+        name = option["name"]
+        MenuController._pending_quick_change[name] = {
+            "option": option,
+            "value": value,
+            "timestamp": time.time()
+        }
+    
+    @staticmethod
+    def apply_pending_changes(camera: Any, callbacks: Optional[Dict[str, Any]] = None):
+        """Apply any pending quick stats changes that have passed the debounce delay.
+        Should be called every frame from the GUI main loop."""
+        if not MenuController._pending_quick_change:
+            return
+        
+        current_time = time.time()
+        to_apply = []
+        
+        for name, pending in list(MenuController._pending_quick_change.items()):
+            if current_time - pending["timestamp"] >= MenuController._debounce_delay:
+                to_apply.append((name, pending))
+        
+        for name, pending in to_apply:
+            del MenuController._pending_quick_change[name]
+            MenuController._apply_setting(camera, pending["option"], callbacks)
+
+    @staticmethod
+    def init_from_layout(layout: Any):
+        """Initialize debounce settings from layout parser."""
+        if layout and not MenuController._debounce_initialized:
+            debounce_ms = layout.get_named_animation_duration('quick_change_debounce')
+            if debounce_ms > 0:
+                MenuController._debounce_delay = debounce_ms / 1000.0  # Convert ms to seconds
+                print(f"Quick change debounce set to {debounce_ms}ms from XML")
+            MenuController._debounce_initialized = True
 
     @staticmethod
     def _apply_setting(camera: Any, option: Dict[str, Any], callbacks: Optional[Dict[str, Any]] = None):
