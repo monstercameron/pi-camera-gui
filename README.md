@@ -4,6 +4,8 @@
 
 Built with **Pygame**, this project turns your Raspberry Pi into a proper digital camera with a slick, navigable UI. Whether you're snapping photos in the field or testing on your desktop, we've got you covered.
 
+![Pi Camera GUI Splash Screen](docs/images/Screenshot%202025-11-28%20234615.png)
+
 ## ✨ Features
 
 *   **Slick UI**: A responsive, menu-driven interface that feels like a real camera.
