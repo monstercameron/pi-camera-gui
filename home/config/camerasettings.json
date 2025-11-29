@@ -17,7 +17,59 @@
     },
     "mode": {
         "dev": false,
-        "cameramode": "manual"
+        "cameramode": "auto"
+    },
+    "stats": {
+        "left": [
+            "mode",
+            "iso",
+            "shutter",
+            "awb",
+            "exposure"
+        ],
+        "right": [
+            "resolution",
+            "filesize",
+            "remaining"
+        ],
+        "quick_stats": {
+            "auto": [
+                "cameramode",
+                "exposurecomp",
+                "imageeffect",
+                "resolution",
+                "quality"
+            ],
+            "manual": [
+                "cameramode",
+                "iso",
+                "shutter",
+                "awb",
+                "exposurecomp"
+            ],
+            "timelapse": [
+                "cameramode",
+                "timelapse_interval",
+                "timelapse_count",
+                "resolution",
+                "quality"
+            ]
+        },
+        "modes": [
+            "auto",
+            "manual",
+            "timelapse"
+        ],
+        "mode_colors": {
+            "auto": "#00FFFF",
+            "manual": "#FFC864",
+            "timelapse": "#64FF64"
+        },
+        "icon_aliases": {
+            "exposurecomp": "exposure",
+            "imagedenoise": "denoise",
+            "exposure": "mode"
+        }
     },
     "theme": {
         "colors": {
@@ -36,7 +88,13 @@
             "font_sub": 20,
             "font_stats": 18,
             "item_height_main": 60,
-            "item_height_sub": 50
+            "item_height_sub": 50,
+            "level_0_width": 200,
+            "level_1_width": 260,
+            "level_2_width": 260,
+            "collapsed_width": 60,
+            "icon_size": 24,
+            "stats_spacing": 20
         }
     },
     "controls": {

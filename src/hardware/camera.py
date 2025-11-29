@@ -672,6 +672,11 @@ class RealCamera(CameraBase):
             self.camera.brightness = value
         return self.camera.brightness
 
+    def exposure_compensation(self, value=None):
+        if value is not None:
+            self.camera.exposure_compensation = value
+        return self.camera.exposure_compensation
+
     def resolution_get_set(self, value=None):
         if value is not None:
             str_to_tuple = tuple(map(int, value.split(',')))
@@ -781,12 +786,14 @@ class RealCamera(CameraBase):
             "iso": self.iso,
             "awb": self.white_balance,
             "sharpness": self.sharpness,
+            "denoise": self.img_denoise,
             "imagedenoise": self.img_denoise,
             "imageeffect": self.img_effect,
             "dynamicrangecompression": self.drc_strength,
             "contrast": self.contrast,
             "saturation": self.saturation,
             "brightness": self.brightness,
+            "exposurecomp": self.exposure_compensation,
             "resolution": self.resolution_get_set,
             "imageformat": self.set_image_format,
             "quality": self.set_image_quality,
@@ -817,6 +824,7 @@ class MockCamera(CameraBase):
         self._contrast = 0
         self._saturation = 0
         self._brightness = 50
+        self._exposure_comp = 0
 
     def getCamera(self):
         return None
@@ -948,6 +956,12 @@ class MockCamera(CameraBase):
             print(f"MockCamera: Set brightness to {value}")
         return self._brightness
 
+    def exposure_compensation(self, value=None):
+        if value is not None:
+            self._exposure_comp = value
+            print(f"MockCamera: Set exposure compensation to {value}")
+        return self._exposure_comp
+
     def resolution_get_set(self, value=None):
         if value is not None:
             str_to_tuple = tuple(map(int, value.split(',')))
@@ -1013,12 +1027,14 @@ class MockCamera(CameraBase):
             "iso": self.iso,
             "awb": self.white_balance,
             "sharpness": self.sharpness,
+            "denoise": self.img_denoise,
             "imagedenoise": self.img_denoise,
             "imageeffect": self.img_effect,
             "dynamicrangecompression": self.drc_strength,
             "contrast": self.contrast,
             "saturation": self.saturation,
             "brightness": self.brightness,
+            "exposurecomp": self.exposure_compensation,
             "resolution": self.resolution_get_set,
             "imageformat": self.set_image_format,
             "quality": self.set_image_quality,

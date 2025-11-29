@@ -14,12 +14,51 @@
                         "max": 25,
                         "step": 5
                     },
-                    "value": 15,
-                    "_original_value": 15
+                    "value": 0
+                },
+                {
+                    "name": "exposure",
+                    "displayname": "Scene Mode",
+                    "type": "list",
+                    "options": [
+                        {
+                            "value": "auto",
+                            "displayname": "Auto"
+                        },
+                        {
+                            "value": "night",
+                            "displayname": "Night"
+                        },
+                        {
+                            "value": "backlight",
+                            "displayname": "Backlight"
+                        },
+                        {
+                            "value": "sports",
+                            "displayname": "Sports"
+                        },
+                        {
+                            "value": "snow",
+                            "displayname": "Snow"
+                        },
+                        {
+                            "value": "beach",
+                            "displayname": "Beach"
+                        },
+                        {
+                            "value": "fireworks",
+                            "displayname": "Fireworks"
+                        },
+                        {
+                            "value": "antishake",
+                            "displayname": "Anti-Shake"
+                        }
+                    ],
+                    "value": "auto"
                 },
                 {
                     "name": "imageeffect",
-                    "displayname": "Image Effect",
+                    "displayname": "Effect",
                     "type": "list",
                     "options": [
                         {
@@ -39,24 +78,12 @@
                             "displayname": "Sketch"
                         },
                         {
-                            "value": "denoise",
-                            "displayname": "Denoise"
-                        },
-                        {
                             "value": "emboss",
                             "displayname": "Emboss"
                         },
                         {
                             "value": "oilpaint",
-                            "displayname": "Oilpaint"
-                        },
-                        {
-                            "value": "hatch",
-                            "displayname": "Hatch"
-                        },
-                        {
-                            "value": "gpen",
-                            "displayname": "Gpen"
+                            "displayname": "Oil Paint"
                         },
                         {
                             "value": "pastel",
@@ -71,48 +98,54 @@
                             "displayname": "Film"
                         },
                         {
-                            "value": "blur",
-                            "displayname": "Blur"
-                        },
-                        {
-                            "value": "saturation",
-                            "displayname": "Saturation"
-                        },
-                        {
-                            "value": "colorswap",
-                            "displayname": "Colorswap"
-                        },
-                        {
-                            "value": "washedout",
-                            "displayname": "Washedout"
-                        },
-                        {
-                            "value": "posterise",
-                            "displayname": "Posterise"
-                        },
-                        {
-                            "value": "colorpoint",
-                            "displayname": "Colorpoint"
-                        },
-                        {
-                            "value": "colorbalance",
-                            "displayname": "Colorbalance"
-                        },
-                        {
                             "value": "cartoon",
                             "displayname": "Cartoon"
                         },
                         {
-                            "value": "deinterlace1",
-                            "displayname": "Deinterlace1"
-                        },
-                        {
-                            "value": "deinterlace2",
-                            "displayname": "Deinterlace2"
+                            "value": "posterise",
+                            "displayname": "Posterize"
                         }
                     ],
-                    "value": "solarize",
-                    "_original_value": "solarize"
+                    "value": "none"
+                },
+                {
+                    "name": "resolution",
+                    "displayname": "Resolution",
+                    "type": "list",
+                    "options": [
+                        {
+                            "value": "1280,720",
+                            "displayname": "720p (1280x720)"
+                        },
+                        {
+                            "value": "1920,1080",
+                            "displayname": "1080p (1920x1080)"
+                        },
+                        {
+                            "value": "2560,1440",
+                            "displayname": "2K (2560x1440)"
+                        },
+                        {
+                            "value": "3840,2160",
+                            "displayname": "4K (3840x2160)"
+                        },
+                        {
+                            "value": "4056,3040",
+                            "displayname": "Full (4056x3040)"
+                        }
+                    ],
+                    "value": "1920,1080"
+                },
+                {
+                    "name": "quality",
+                    "displayname": "Quality",
+                    "type": "range",
+                    "options": {
+                        "min": 10,
+                        "max": 100,
+                        "step": 10
+                    },
+                    "value": 80
                 }
             ]
         },
@@ -122,143 +155,176 @@
             "type": "list",
             "options": [
                 {
-                    "name": "exposure",
+                    "name": "exposure_group",
                     "displayname": "Exposure",
                     "type": "list",
                     "options": [
                         {
-                            "value": "off",
-                            "displayname": "Off"
+                            "name": "shutter",
+                            "displayname": "Shutter Speed",
+                            "type": "range",
+                            "options": {
+                                "min": 100,
+                                "max": 32000,
+                                "step": 500
+                            },
+                            "value": 8000
                         },
                         {
-                            "value": "auto",
-                            "displayname": "Auto"
+                            "name": "iso",
+                            "displayname": "ISO",
+                            "type": "range",
+                            "options": {
+                                "min": 100,
+                                "max": 1600,
+                                "step": 100
+                            },
+                            "value": 400
                         },
                         {
-                            "value": "night",
-                            "displayname": "Night"
+                            "name": "exposurecomp",
+                            "displayname": "Exposure Comp",
+                            "type": "range",
+                            "options": {
+                                "min": -25,
+                                "max": 25,
+                                "step": 5
+                            },
+                            "value": 0
                         },
                         {
-                            "value": "nightpreview",
-                            "displayname": "Nightpreview"
-                        },
-                        {
-                            "value": "backlight",
-                            "displayname": "Backlight"
-                        },
-                        {
-                            "value": "spotlight",
-                            "displayname": "Spotlight"
-                        },
-                        {
-                            "value": "sports",
-                            "displayname": "Sports"
-                        },
-                        {
-                            "value": "snow",
-                            "displayname": "Snow"
-                        },
-                        {
-                            "value": "beach",
-                            "displayname": "Beach"
-                        },
-                        {
-                            "value": "verylong",
-                            "displayname": "Verylong"
-                        },
-                        {
-                            "value": "fixedfps",
-                            "displayname": "Fixedfps"
-                        },
-                        {
-                            "value": "antishake",
-                            "displayname": "Antishake"
-                        },
-                        {
-                            "value": "fireworks",
-                            "displayname": "Fireworks"
+                            "name": "exposure",
+                            "displayname": "Metering Mode",
+                            "type": "list",
+                            "options": [
+                                {
+                                    "value": "off",
+                                    "displayname": "Off (Full Manual)"
+                                },
+                                {
+                                    "value": "auto",
+                                    "displayname": "Auto"
+                                },
+                                {
+                                    "value": "night",
+                                    "displayname": "Night"
+                                },
+                                {
+                                    "value": "spotlight",
+                                    "displayname": "Spotlight"
+                                },
+                                {
+                                    "value": "verylong",
+                                    "displayname": "Long Exposure"
+                                }
+                            ],
+                            "value": "off"
                         }
-                    ],
-                    "value": "night",
-                    "_original_value": "beach"
+                    ]
                 },
                 {
-                    "name": "shutter",
-                    "displayname": "Shutter",
-                    "type": "range",
-                    "options": {
-                        "min": 1000,
-                        "max": 32000,
-                        "step": 1000
-                    },
-                    "value": 22000
-                },
-                {
-                    "name": "iso",
-                    "displayname": "ISO",
-                    "type": "range",
-                    "options": {
-                        "min": 100,
-                        "max": 1600,
-                        "step": 100
-                    },
-                    "value": 1000,
-                    "_original_value": 300
-                },
-                {
-                    "name": "awb",
-                    "displayname": "AWB",
+                    "name": "color_group",
+                    "displayname": "Color / WB",
                     "type": "list",
                     "options": [
                         {
-                            "value": "off",
-                            "displayname": "Off"
+                            "name": "awb",
+                            "displayname": "White Balance",
+                            "type": "list",
+                            "options": [
+                                {
+                                    "value": "off",
+                                    "displayname": "Off"
+                                },
+                                {
+                                    "value": "auto",
+                                    "displayname": "Auto"
+                                },
+                                {
+                                    "value": "sunlight",
+                                    "displayname": "Sunlight"
+                                },
+                                {
+                                    "value": "cloudy",
+                                    "displayname": "Cloudy"
+                                },
+                                {
+                                    "value": "shade",
+                                    "displayname": "Shade"
+                                },
+                                {
+                                    "value": "tungsten",
+                                    "displayname": "Tungsten"
+                                },
+                                {
+                                    "value": "fluorescent",
+                                    "displayname": "Fluorescent"
+                                },
+                                {
+                                    "value": "flash",
+                                    "displayname": "Flash"
+                                }
+                            ],
+                            "value": "auto"
                         },
                         {
-                            "value": "auto",
-                            "displayname": "Auto"
-                        },
-                        {
-                            "value": "sunlight",
-                            "displayname": "Sunlight"
-                        },
-                        {
-                            "value": "cloudy",
-                            "displayname": "Cloudy"
-                        },
-                        {
-                            "value": "shade",
-                            "displayname": "Shade"
-                        },
-                        {
-                            "value": "tungsten",
-                            "displayname": "Tungsten"
-                        },
-                        {
-                            "value": "fluorescent",
-                            "displayname": "Fluorescent"
-                        },
-                        {
-                            "value": "incandescent",
-                            "displayname": "Incandescent"
-                        },
-                        {
-                            "value": "flash",
-                            "displayname": "Flash"
-                        },
-                        {
-                            "value": "horizon",
-                            "displayname": "Horizon"
+                            "name": "saturation",
+                            "displayname": "Saturation",
+                            "type": "range",
+                            "options": {
+                                "min": -100,
+                                "max": 100,
+                                "step": 25
+                            },
+                            "value": 0
                         }
-                    ],
-                    "value": "cloudy",
-                    "_original_value": "auto"
+                    ]
+                },
+                {
+                    "name": "lens_group",
+                    "displayname": "Image Adjust",
+                    "type": "list",
+                    "options": [
+                        {
+                            "name": "brightness",
+                            "displayname": "Brightness",
+                            "type": "range",
+                            "options": {
+                                "min": 0,
+                                "max": 100,
+                                "step": 10
+                            },
+                            "value": 50
+                        },
+                        {
+                            "name": "contrast",
+                            "displayname": "Contrast",
+                            "type": "range",
+                            "options": {
+                                "min": -100,
+                                "max": 100,
+                                "step": 20
+                            },
+                            "value": 0
+                        },
+                        {
+                            "name": "sharpness",
+                            "displayname": "Sharpness",
+                            "type": "range",
+                            "options": {
+                                "min": -100,
+                                "max": 100,
+                                "step": 25
+                            },
+                            "value": 0
+                        }
+                    ]
                 }
             ]
         },
         {
             "name": "image settings",
-            "displayname": "Image Settings",
+            "displayname": "Image",
             "type": "list",
             "options": [
                 {
@@ -268,47 +334,42 @@
                     "options": [
                         {
                             "value": "1280,720",
-                            "displayname": "1280 x 720"
+                            "displayname": "720p (1280x720)"
                         },
                         {
                             "value": "1920,1080",
-                            "displayname": "1920 x 1080"
+                            "displayname": "1080p (1920x1080)"
                         },
                         {
                             "value": "2560,1440",
-                            "displayname": "2560 x 1440"
+                            "displayname": "2K (2560x1440)"
                         },
                         {
                             "value": "3840,2160",
-                            "displayname": "3840 x 2160"
+                            "displayname": "4K (3840x2160)"
                         },
                         {
                             "value": "4000,3000",
-                            "displayname": "4000 x 3000"
+                            "displayname": "4:3 (4000x3000)"
                         },
                         {
                             "value": "4056,3040",
-                            "displayname": "4056 x 3040"
-                        },
-                        {
-                            "value": "1000,1000",
-                            "displayname": "1000 x 1000"
+                            "displayname": "Full (4056x3040)"
                         },
                         {
                             "value": "2000,2000",
-                            "displayname": "2000 x 2000"
+                            "displayname": "Square 2K"
                         },
                         {
                             "value": "3000,3000",
-                            "displayname": "3000 x 3000"
+                            "displayname": "Square 3K"
                         }
                     ],
-                    "value": "1280,720",
-                    "_original_value": "4056,3040"
+                    "value": "1920,1080"
                 },
                 {
                     "name": "imageformat",
-                    "displayname": "Image Format",
+                    "displayname": "Format",
                     "type": "list",
                     "options": [
                         {
@@ -324,52 +385,42 @@
                             "displayname": "BMP"
                         },
                         {
-                            "value": "gif",
-                            "displayname": "GIF"
-                        },
-                        {
-                            "value": "yuv",
-                            "displayname": "YUV"
-                        },
-                        {
-                            "value": "rgb",
-                            "displayname": "RGB"
-                        },
-                        {
-                            "value": "rgba",
-                            "displayname": "RGBA"
-                        },
-                        {
-                            "value": "bgr",
-                            "displayname": "BGR"
-                        },
-                        {
-                            "value": "bgra",
-                            "displayname": "BGRA"
-                        },
-                        {
                             "value": "raw",
                             "displayname": "RAW"
                         }
                     ],
-                    "value": "png",
-                    "_original_value": "png"
+                    "value": "jpeg"
                 },
                 {
                     "name": "quality",
-                    "displayname": "Image Quality",
+                    "displayname": "Quality",
                     "type": "range",
                     "options": {
-                        "min": 1,
+                        "min": 10,
                         "max": 100,
-                        "step": 5
+                        "step": 10
                     },
-                    "value": 100,
-                    "_original_value": 85
+                    "value": 80
+                },
+                {
+                    "name": "denoise",
+                    "displayname": "Denoise",
+                    "type": "list",
+                    "options": [
+                        {
+                            "value": true,
+                            "displayname": "On"
+                        },
+                        {
+                            "value": false,
+                            "displayname": "Off"
+                        }
+                    ],
+                    "value": true
                 },
                 {
                     "name": "dynamicRangeCompression",
-                    "displayname": "Dynamic Range",
+                    "displayname": "HDR",
                     "type": "list",
                     "options": [
                         {
@@ -390,69 +441,6 @@
                         }
                     ],
                     "value": "off"
-                },
-                {
-                    "name": "denoise",
-                    "displayname": "Denoise",
-                    "type": "list",
-                    "options": [
-                        {
-                            "value": true,
-                            "displayname": "On"
-                        },
-                        {
-                            "value": false,
-                            "displayname": "Off"
-                        }
-                    ],
-                    "value": true,
-                    "_original_value": true
-                },
-                {
-                    "name": "sharpness",
-                    "displayname": "Sharpness",
-                    "type": "range",
-                    "options": {
-                        "min": -100,
-                        "max": 100,
-                        "step": 25
-                    },
-                    "value": 50
-                },
-                {
-                    "name": "contrast",
-                    "displayname": "Contrast",
-                    "type": "range",
-                    "options": {
-                        "min": -100,
-                        "max": 100,
-                        "step": 20
-                    },
-                    "value": -100,
-                    "_original_value": 40
-                },
-                {
-                    "name": "brightness",
-                    "displayname": "Brightness",
-                    "type": "range",
-                    "options": {
-                        "min": 0,
-                        "max": 100,
-                        "step": 10
-                    },
-                    "value": 100,
-                    "_original_value": 100
-                },
-                {
-                    "name": "saturation",
-                    "displayname": "Saturation",
-                    "type": "range",
-                    "options": {
-                        "min": -100,
-                        "max": 100,
-                        "step": 25
-                    },
-                    "value": 0
                 }
             ]
         },
@@ -462,43 +450,57 @@
             "type": "list",
             "options": [
                 {
-                    "name": "timer",
-                    "displayname": "Self Timer",
+                    "name": "mode",
+                    "displayname": "Mode",
                     "type": "list",
                     "options": [
-                        {"value": 0, "displayname": "Off"},
-                        {"value": 2, "displayname": "2s"},
-                        {"value": 5, "displayname": "5s"},
-                        {"value": 10, "displayname": "10s"}
+                        {
+                            "value": "single",
+                            "displayname": "Single Shot"
+                        },
+                        {
+                            "value": "burst",
+                            "displayname": "Burst"
+                        },
+                        {
+                            "value": "timelapse",
+                            "displayname": "Timelapse"
+                        }
                     ],
-                    "value": 0
+                    "value": "single"
+                },
+                {
+                    "name": "burst_count",
+                    "displayname": "Burst Count",
+                    "type": "range",
+                    "options": {
+                        "min": 3,
+                        "max": 10,
+                        "step": 1
+                    },
+                    "value": 5
                 },
                 {
                     "name": "timelapse_interval",
-                    "displayname": "Timelapse Interval",
-                    "type": "list",
-                    "options": [
-                        {"value": 0, "displayname": "Off"},
-                        {"value": 2, "displayname": "2s"},
-                        {"value": 5, "displayname": "5s"},
-                        {"value": 10, "displayname": "10s"},
-                        {"value": 30, "displayname": "30s"},
-                        {"value": 60, "displayname": "1m"}
-                    ],
-                    "value": 0
+                    "displayname": "TL Interval (s)",
+                    "type": "range",
+                    "options": {
+                        "min": 1,
+                        "max": 60,
+                        "step": 1
+                    },
+                    "value": 5
                 },
                 {
-                    "name": "timelapse_duration",
-                    "displayname": "Timelapse Duration",
-                    "type": "list",
-                    "options": [
-                        {"value": 0, "displayname": "Infinite"},
-                        {"value": 5, "displayname": "5m"},
-                        {"value": 10, "displayname": "10m"},
-                        {"value": 30, "displayname": "30m"},
-                        {"value": 60, "displayname": "1h"}
-                    ],
-                    "value": 0
+                    "name": "timelapse_count",
+                    "displayname": "TL Count",
+                    "type": "range",
+                    "options": {
+                        "min": 10,
+                        "max": 1000,
+                        "step": 10
+                    },
+                    "value": 100
                 }
             ]
         },
@@ -508,20 +510,41 @@
             "type": "list",
             "options": [
                 {
-                    "name": "open_gallery",
-                    "displayname": "Gallery",
+                    "name": "display_brightness",
+                    "displayname": "Display",
+                    "type": "range",
+                    "options": {
+                        "min": 10,
+                        "max": 100,
+                        "step": 10
+                    },
+                    "value": 80
+                },
+                {
+                    "name": "preview_fps",
+                    "displayname": "Preview FPS",
                     "type": "list",
                     "options": [
                         {
-                            "value": "no",
-                            "displayname": "Cancel"
+                            "value": 15,
+                            "displayname": "15 fps"
                         },
                         {
-                            "value": "yes",
-                            "displayname": "Open Gallery"
+                            "value": 24,
+                            "displayname": "24 fps"
+                        },
+                        {
+                            "value": 30,
+                            "displayname": "30 fps"
                         }
                     ],
-                    "value": "no"
+                    "value": 24
+                },
+                {
+                    "name": "gallery",
+                    "displayname": "Gallery",
+                    "type": "action",
+                    "action": "open_gallery"
                 },
                 {
                     "name": "reset_settings",

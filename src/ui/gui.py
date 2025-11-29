@@ -306,6 +306,11 @@ class GUI:
             if self.layout:
                 self.layout.load_layout(current_menu_name)
 
+        # Get widths from layout config
+        layout_widths = self.layout.get_widths() if self.layout else {
+            'level_0': 200, 'level_1': 260, 'level_2': 260, 'collapsed': 60
+        }
+
         # Dynamic Layout Calculation with Animation
         current_level = self.menu_positions[3]
         
@@ -320,22 +325,22 @@ class GUI:
 
         # Helper to get target width for a column at a specific level state
         def get_target_width(col_idx, level_state):
-            collapsed_width = 60
+            collapsed_width = layout_widths['collapsed']
             # Level 0 (Main Menu)
             if col_idx == 0:
                 # Collapses if level > 0
-                return collapsed_width if level_state > 0 else 200
+                return collapsed_width if level_state > 0 else layout_widths['level_0']
             # Level 1 (Submenu)
             elif col_idx == 1:
                 # Hidden if level < 1
                 if level_state < 1: return 0
                 # Collapses if level > 1
-                return collapsed_width if level_state > 1 else 260
+                return collapsed_width if level_state > 1 else layout_widths['level_1']
             # Level 2 (Options)
             elif col_idx == 2:
                 # Hidden if level < 2
                 if level_state < 2: return 0
-                return 260
+                return layout_widths['level_2']
             return 0
 
         # Interpolate Widths
@@ -477,10 +482,13 @@ class GUI:
                 # Normalize: lowercase, replace spaces with underscores
                 raw_name = str(item.get("name", "")).lower().replace(" ", "_")
                 
-                # Icon Aliases
-                icon_aliases = {
-                    "exposurecomp": "exposure"
-                }
+                # Icon Aliases from settings
+                stats_config = self.settings.get("stats", {})
+                icon_aliases = stats_config.get("icon_aliases", {
+                    "exposurecomp": "exposure",
+                    "imagedenoise": "denoise",
+                    "exposure": "mode"
+                })
                 if raw_name in icon_aliases:
                     raw_name = icon_aliases[raw_name]
 
@@ -526,10 +534,13 @@ class GUI:
                 icon_width = 0
                 raw_name = str(item.get("name", "")).lower().replace(" ", "_")
                 
-                # Icon Aliases
-                icon_aliases = {
-                    "exposurecomp": "exposure"
-                }
+                # Icon Aliases from settings
+                stats_config = self.settings.get("stats", {})
+                icon_aliases = stats_config.get("icon_aliases", {
+                    "exposurecomp": "exposure",
+                    "imagedenoise": "denoise",
+                    "exposure": "mode"
+                })
                 if raw_name in icon_aliases:
                     raw_name = icon_aliases[raw_name]
 
@@ -677,6 +688,18 @@ class GUI:
         # Stats
         directory = self.camera.directory()
         
+        # Get current camera mode from settings
+        current_mode = self.settings.get("mode", {}).get("cameramode", "auto")
+        
+        # Get stats config from settings
+        stats_config = self.settings.get("stats", {})
+        left_stats = stats_config.get("left", ["mode", "iso", "shutter", "awb", "exposure"])
+        right_stats = stats_config.get("right", ["resolution", "filesize", "remaining"])
+        
+        # Get mode-based quick stats
+        quick_stats_config = stats_config.get("quick_stats", {})
+        quick_stats = quick_stats_config.get(current_mode, ["cameramode", "iso", "shutter", "awb", "exposurecomp"])
+        
         # Use stats container from layout
         if self.layout:
             container = self.layout.get_element_by_id("stats")
@@ -686,121 +709,148 @@ class GUI:
                 w = self._parse_dimension(container.get("width", "100%"), self.width)
                 h = self._parse_dimension(container.get("height", "30"), self.height)
                 bg_color = self._parse_color(container.get("bg_color", "#00000088"))
-                font_size = int(container.get("font_size", "12"))
+                font_size = int(container.get("font_size", 16))
                 color = self._parse_color(container.get("color", "#FFFFFF"))
+                icon_size = int(container.get("icon_size", 20))
+                spacing = int(container.get("spacing", 15))
+                selection_alpha = int(container.get("selection_alpha", 60))
+                selection_border = int(container.get("selection_border_width", 1))
                 
                 # Draw background
                 pygame.draw.rect(self.layer, bg_color, (x, y, w, h))
                 
                 # Draw stats with icons
-                current_x = x + 20
+                current_x = x + 15
                 center_y = y + h // 2
                 font = pygame.font.Font('freesansbold.ttf', font_size)
                 
-                # Define priority stats to show
-                left_stats = ["mode", "iso", "shutter", "awb", "exposure"]
-                right_stats = ["resolution", "filesize", "remaining"]
+                # Get mode colors from settings
+                mode_colors_config = stats_config.get("mode_colors", {
+                    "auto": "#00FFFF",
+                    "manual": "#FFC864",
+                    "timelapse": "#64FF64"
+                })
+                selected_color = self._parse_color(self.settings.get("theme", {}).get("colors", {}).get("selected", "#00FFFF"))
                 
-                # Render Left Stats
-                for i, key in enumerate(left_stats):
-                    if key in directory:
-                        start_x = current_x
-                        value = str(directory[key]())
+                # First pass: calculate positions for all renderable stats
+                stat_positions = []  # List of (key, start_x, end_x, is_cameramode, render_color)
+                temp_x = current_x
+                
+                for key in quick_stats:
+                    if key == "cameramode":
+                        mode_color = self._parse_color(mode_colors_config.get(current_mode, "#FFFFFF"))
+                        mode_display = current_mode.upper()[:4]
+                        mode_surf = font.render(f"[{mode_display}]", True, mode_color)
+                        stat_positions.append({
+                            "key": key,
+                            "start_x": temp_x,
+                            "end_x": temp_x + mode_surf.get_width(),
+                            "is_cameramode": True,
+                            "color": mode_color,
+                            "surface": mode_surf
+                        })
+                        temp_x += mode_surf.get_width() + spacing + 5
+                    elif key in directory:
+                        start_x = temp_x
+                        value = self._format_stat_value(key, directory[key]())
                         
-                        # Try to load icon
-                        icon_path = f"src/ui/icons/{key}.svg"
-                        
-                        # Check Cache
-                        icon_drawn = False
-                        if icon_path in self._icon_cache:
-                            icon = self._icon_cache[icon_path]
-                            if icon:
-                                icon_rect = icon.get_rect(midleft=(current_x, center_y))
-                                self.layer.blit(icon, icon_rect)
-                                current_x += 30
-                                icon_drawn = True
-                        elif os.path.exists(icon_path):
-                            try:
-                                icon = pygame.image.load(icon_path)
-                                icon = pygame.transform.scale(icon, (24, 24))
-                                self._icon_cache[icon_path] = icon
-                                
-                                icon_rect = icon.get_rect(midleft=(current_x, center_y))
-                                self.layer.blit(icon, icon_rect)
-                                current_x += 30
-                                icon_drawn = True
-                            except (pygame.error, FileNotFoundError):
-                                self._icon_cache[icon_path] = None
+                        # Calculate icon width
+                        icon = self._load_icon(key, icon_size)
+                        if icon:
+                            temp_x += icon_size + 5
                         else:
-                            self._icon_cache[icon_path] = None
-                            
-                        if not icon_drawn:
-                            label_surf = font.render(key.upper(), True, (200, 200, 200))
-                            label_rect = label_surf.get_rect(midleft=(current_x, center_y))
-                            self.layer.blit(label_surf, label_rect)
-                            current_x += label_rect.width + 5
-
-                        # Draw Value
-                        val_surf = font.render(value, True, color)
-                        val_rect = val_surf.get_rect(midleft=(current_x, center_y))
-                        self.layer.blit(val_surf, val_rect)
+                            label_surf = font.render(key[:3].upper(), True, (180, 180, 180))
+                            temp_x += label_surf.get_width() + 5
                         
-                        # Draw Selection Box if active
-                        if not self.settings["display"]["showmenu"] and i == self.quick_menu_pos[0]:
-                            end_x = current_x + val_rect.width
-                            selection_rect = pygame.Rect(start_x - 5, y + 2, (end_x - start_x) + 10, h - 4)
-                            s = pygame.Surface((selection_rect.width, selection_rect.height), pygame.SRCALPHA)
-                            s.fill((255, 255, 255, 50))
-                            self.layer.blit(s, selection_rect.topleft)
-                            pygame.draw.rect(self.layer, (255, 255, 255), selection_rect, 1)
-
-                        current_x += val_rect.width + 20
+                        # Calculate value width
+                        val_surf = font.render(value, True, color)
+                        end_x = temp_x + val_surf.get_width()
+                        
+                        stat_positions.append({
+                            "key": key,
+                            "start_x": start_x,
+                            "end_x": end_x,
+                            "is_cameramode": False,
+                            "color": selected_color,
+                            "value": value,
+                            "icon": icon
+                        })
+                        temp_x = end_x + spacing
+                
+                # Clamp quick_menu_pos to valid range
+                num_stats = len(stat_positions)
+                if num_stats > 0 and self.quick_menu_pos[0] >= num_stats:
+                    self.quick_menu_pos[0] = num_stats - 1
+                
+                # Second pass: render with proper selection
+                for i, stat in enumerate(stat_positions):
+                    is_selected = not self.settings["display"]["showmenu"] and i == self.quick_menu_pos[0]
+                    
+                    # Draw selection box FIRST (behind content)
+                    if is_selected:
+                        selection_rect = pygame.Rect(
+                            stat["start_x"] - 5, 
+                            y + 3, 
+                            (stat["end_x"] - stat["start_x"]) + 10, 
+                            h - 6
+                        )
+                        # Draw subtle dark background highlight (not white which washes out)
+                        stat_color = stat["color"] if len(stat["color"]) >= 3 else (0, 255, 255)
+                        highlight_color = (stat_color[0] // 4, stat_color[1] // 4, stat_color[2] // 4, selection_alpha)
+                        pygame.draw.rect(self.layer, highlight_color, selection_rect)
+                        # Draw border
+                        pygame.draw.rect(self.layer, stat_color, selection_rect, selection_border)
+                    
+                    # Now render the content
+                    if stat["is_cameramode"]:
+                        surf_rect = stat["surface"].get_rect(midleft=(stat["start_x"], center_y))
+                        self.layer.blit(stat["surface"], surf_rect)
+                    else:
+                        render_x = stat["start_x"]
+                        
+                        # Draw icon or label
+                        if stat["icon"]:
+                            icon_rect = stat["icon"].get_rect(midleft=(render_x, center_y))
+                            self.layer.blit(stat["icon"], icon_rect)
+                            render_x += icon_size + 5
+                        else:
+                            label_surf = font.render(stat["key"][:3].upper(), True, (180, 180, 180))
+                            label_rect = label_surf.get_rect(midleft=(render_x, center_y))
+                            self.layer.blit(label_surf, label_rect)
+                            render_x += label_surf.get_width() + 5
+                        
+                        # Draw value
+                        val_surf = font.render(stat["value"], True, color)
+                        val_rect = val_surf.get_rect(midleft=(render_x, center_y))
+                        self.layer.blit(val_surf, val_rect)
 
                 # Render Right Stats (Right Justified)
-                current_x = x + w - 20
+                current_x = x + w - 15
                 for key in reversed(right_stats):
                     if key in directory:
-                        value = str(directory[key]())
+                        value = self._format_stat_value(key, directory[key]())
                         
                         # Calculate width first to position correctly
                         val_surf = font.render(value, True, color)
                         val_width = val_surf.get_width()
                         
-                        icon_width = 30 # Standard icon width + padding
+                        icon_width = icon_size + 5
                         
                         # Position: [Icon] [Value] | <-- current_x
-                        # So we move current_x back by (icon + value + spacing)
-                        
                         item_width = icon_width + val_width
                         draw_x = current_x - item_width
                         
                         # Draw Icon
-                        icon_path = f"src/ui/icons/{key}.svg"
-                        
-                        # Check Cache
-                        if icon_path in self._icon_cache:
-                            icon = self._icon_cache[icon_path]
-                            if icon:
-                                icon_rect = icon.get_rect(midleft=(draw_x, center_y))
-                                self.layer.blit(icon, icon_rect)
-                        elif os.path.exists(icon_path):
-                            try:
-                                icon = pygame.image.load(icon_path)
-                                icon = pygame.transform.scale(icon, (24, 24))
-                                self._icon_cache[icon_path] = icon
-                                
-                                icon_rect = icon.get_rect(midleft=(draw_x, center_y))
-                                self.layer.blit(icon, icon_rect)
-                            except (pygame.error, FileNotFoundError):
-                                self._icon_cache[icon_path] = None
-                        else:
-                            self._icon_cache[icon_path] = None
+                        icon = self._load_icon(key, icon_size)
+                        if icon:
+                            icon_rect = icon.get_rect(midleft=(draw_x, center_y))
+                            self.layer.blit(icon, icon_rect)
 
                         # Draw Value
-                        val_rect = val_surf.get_rect(midleft=(draw_x + 30, center_y))
+                        val_rect = val_surf.get_rect(midleft=(draw_x + icon_width, center_y))
                         self.layer.blit(val_surf, val_rect)
                         
-                        current_x -= (item_width + 20) # Move left for next item
+                        current_x -= (item_width + spacing)
 
                 # Delegate rendering to camera
                 self.camera.render(self.layer, self.screen)
@@ -815,6 +865,72 @@ class GUI:
 
         # Delegate rendering to camera
         self.camera.render(self.layer, self.screen)
+
+    def _load_icon(self, key: str, size: int = 24):
+        """Load and cache an icon by key name."""
+        # Apply icon aliases from settings or use defaults
+        stats_config = self.settings.get("stats", {})
+        icon_aliases = stats_config.get("icon_aliases", {
+            "exposurecomp": "exposure",
+            "imagedenoise": "denoise",
+            "exposure": "mode"
+        })
+        icon_key = icon_aliases.get(key, key)
+        icon_path = f"src/ui/icons/{icon_key}.svg"
+        
+        cache_key = f"{icon_path}_{size}"
+        
+        if cache_key in self._icon_cache:
+            return self._icon_cache[cache_key]
+        
+        if os.path.exists(icon_path):
+            try:
+                icon = pygame.image.load(icon_path)
+                icon = pygame.transform.scale(icon, (size, size))
+                self._icon_cache[cache_key] = icon
+                return icon
+            except (pygame.error, FileNotFoundError):
+                self._icon_cache[cache_key] = None
+        else:
+            self._icon_cache[cache_key] = None
+        
+        return None
+
+    def _format_stat_value(self, key: str, value) -> str:
+        """Format stat values for display."""
+        if key == "shutter":
+            # Convert microseconds to readable format
+            if isinstance(value, (int, float)) and value > 0:
+                if value >= 1000000:
+                    return f"{value / 1000000:.1f}s"
+                elif value >= 1000:
+                    # Show as fraction for common shutter speeds
+                    fraction = 1000000 / value
+                    if fraction >= 1:
+                        return f"1/{int(fraction)}"
+                    return f"{value / 1000:.0f}ms"
+                else:
+                    return f"{value}µs"
+            return str(value)
+        
+        elif key == "iso":
+            return str(value)
+        
+        elif key == "resolution":
+            if isinstance(value, str) and "," in value:
+                parts = value.split(",")
+                return f"{parts[0]}×{parts[1]}"
+            elif isinstance(value, tuple):
+                return f"{value[0]}×{value[1]}"
+            return str(value)
+        
+        elif key == "exposurecomp":
+            if isinstance(value, (int, float)):
+                sign = "+" if value > 0 else ""
+                return f"{sign}{value}"
+            return str(value)
+        
+        return str(value)
 
     def _generate_text(self, text: str, fg: tuple, bg: tuple, font=None):
         if font is None:

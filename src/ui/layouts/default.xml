@@ -1,6 +1,12 @@
 <layout>
+    <!-- Layout Configuration - uses theme defaults from camerasettings.json -->
+    <config>
+        <widths level_0="@level_0_width" level_1="@level_1_width" level_2="@level_2_width" collapsed="@collapsed_width" />
+        <animation duration="@animation_duration" />
+    </config>
+
     <!-- Main Menu (Left Sidebar) -->
-    <container id="level_0" x="0" y="0" width="200" height="100%" 
+    <container id="level_0" x="0" y="0" width="@level_0_width" height="100%" 
                orientation="vertical" 
                item_height="@item_height_main" 
                font_size="@font_main"
@@ -11,7 +17,7 @@
                padding="10" />
 
     <!-- Submenu (Panel next to sidebar) -->
-    <container id="level_1" x="200" y="0" width="260" height="100%" 
+    <container id="level_1" x="@level_0_width" y="0" width="@level_1_width" height="100%" 
                orientation="vertical" 
                item_height="@item_height_sub" 
                font_size="@font_sub"
@@ -22,7 +28,7 @@
                padding="10" />
 
     <!-- Options (Panel next to submenu) -->
-    <container id="level_2" x="460" y="0" width="260" height="100%" 
+    <container id="level_2" x="460" y="0" width="@level_2_width" height="100%" 
                orientation="vertical" 
                item_height="@item_height_sub" 
                font_size="@font_sub"
@@ -32,9 +38,14 @@
                selection_bg_color="@selection_bg"
                padding="10" />
 
-    <!-- Stats (Bottom Bar) -->
+    <!-- Stats Strip (Bottom Bar) -->
     <container id="stats" x="0" y="88%" width="100%" height="12%" 
                bg_color="@stats_bg" 
                font_size="@font_stats" 
-               color="@text_main" />
+               color="@text_main"
+               icon_size="@icon_size"
+               spacing="@stats_spacing"
+               padding="10"
+               selection_alpha="60"
+               selection_border_width="1" />
 </layout>
