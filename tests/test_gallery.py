@@ -7,6 +7,10 @@ import os
 sys.modules['pygame'] = MagicMock()
 import pygame
 
+# Configure pygame mock
+pygame.time.get_ticks = MagicMock(return_value=0)
+pygame.font.Font = MagicMock(return_value=MagicMock())
+
 from src.ui.gallery import Gallery
 
 class TestGallery(unittest.TestCase):
@@ -15,10 +19,10 @@ class TestGallery(unittest.TestCase):
             "files": {"path": "test/path"},
             "display": {"fontsize": 20}
         }
-        # Mock pygame.font.Font
-        pygame.font.Font = MagicMock()
         
         self.gallery = Gallery(self.settings)
+        # Mock buffer update to avoid side effects in basic tests
+        self.gallery._update_buffer = MagicMock()
 
     @patch('os.path.exists')
     @patch('os.listdir')

@@ -1,9 +1,14 @@
 import pygame
 import os
-from typing import List, Optional
+import math
+import threading
+from typing import List, Optional, Set
 from PIL import Image, ExifTags
 
 class Gallery:
+    # Buffer size: keep ±25 images loaded around current position
+    BUFFER_SIZE = 25
+    
     def __init__(self, settings):
         self.settings = settings
         # Ensure path exists
@@ -15,9 +20,14 @@ class Gallery:
         self.files: List[str] = []
         self.current_index = 0
         self.image_cache = {}
+        self._cache_lock = threading.Lock()
+        self._loading_indices: Set[int] = set()  # Track which indices are being loaded
         self.font = pygame.font.Font("freesansbold.ttf", 20)
         self.meta_font = pygame.font.Font("freesansbold.ttf", 16)
         self.active = False
+        
+        # Display dimensions for scaling (set on first render)
+        self._display_size = None
         
         # Animation State
         self.target_index = 0
@@ -36,10 +46,15 @@ class Gallery:
             self.current_index = len(self.files) - 1 # Start at newest
             self.target_index = self.current_index
             self.animating = False
+            # Start loading buffer around current position
+            self._update_buffer()
 
     def exit(self):
         self.active = False
-        self.image_cache.clear()
+        # Clear cache to free RAM
+        with self._cache_lock:
+            self.image_cache.clear()
+        self._loading_indices.clear()
 
     def refresh_files(self):
         if not os.path.exists(self.path):
@@ -71,6 +86,8 @@ class Gallery:
                     self.direction = -1
                     self.animating = True
                     self.transition_start = pygame.time.get_ticks()
+                    # Update buffer for new position
+                    self._update_buffer(new_index)
         elif action == "right":
             if self.files and not self.animating:
                 # Auto-collapse: exit when at last image
@@ -84,6 +101,8 @@ class Gallery:
                     self.direction = 1
                     self.animating = True
                     self.transition_start = pygame.time.get_ticks()
+                    # Update buffer for new position
+                    self._update_buffer(new_index)
         elif action == "up":
             self.show_metadata = True
         elif action == "down":
@@ -91,8 +110,95 @@ class Gallery:
         elif action == "back" or action == "enter":
             self.exit()
 
+    def _get_buffer_indices(self, center_index: int = None) -> Set[int]:
+        """Get the set of indices that should be in the buffer."""
+        if center_index is None:
+            center_index = self.current_index
+        
+        if not self.files:
+            return set()
+        
+        indices = set()
+        total = len(self.files)
+        
+        for offset in range(-self.BUFFER_SIZE, self.BUFFER_SIZE + 1):
+            idx = center_index + offset
+            # Clamp to valid range (no wrapping for buffer)
+            if 0 <= idx < total:
+                indices.add(idx)
+        
+        return indices
+
+    def _update_buffer(self, new_center: int = None):
+        """Update the image buffer: load new images, unload distant ones."""
+        if not self.files:
+            return
+            
+        if new_center is None:
+            new_center = self.current_index
+        
+        desired_indices = self._get_buffer_indices(new_center)
+        
+        # Unload images outside the buffer
+        with self._cache_lock:
+            current_cached = set()
+            for filepath in list(self.image_cache.keys()):
+                filename = os.path.basename(filepath)
+                if filename in self.files:
+                    idx = self.files.index(filename)
+                    current_cached.add(idx)
+                    if idx not in desired_indices:
+                        del self.image_cache[filepath]
+        
+        # Load missing images in background
+        for idx in desired_indices:
+            if idx not in current_cached and idx not in self._loading_indices:
+                self._load_image_async(idx)
+
+    def _load_image_async(self, index: int):
+        """Load an image in a background thread."""
+        if index < 0 or index >= len(self.files):
+            return
+        
+        self._loading_indices.add(index)
+        
+        def load():
+            try:
+                filename = self.files[index]
+                filepath = os.path.join(self.path, filename)
+                
+                if not os.path.exists(filepath):
+                    return
+                
+                # Load and scale image
+                img = pygame.image.load(filepath)
+                
+                # Use stored display size or default
+                if self._display_size:
+                    sw, sh = self._display_size
+                else:
+                    sw, sh = 480, 320  # Default fallback
+                
+                iw, ih = img.get_size()
+                scale = min(sw/iw, sh/ih)
+                new_size = (int(iw*scale), int(ih*scale))
+                img = pygame.transform.scale(img, new_size)
+                
+                with self._cache_lock:
+                    self.image_cache[filepath] = img
+            except Exception as e:
+                print(f"Error loading {self.files[index]}: {e}")
+            finally:
+                self._loading_indices.discard(index)
+        
+        thread = threading.Thread(target=load, daemon=True)
+        thread.start()
+
     def render(self, surface):
         if not self.active: return
+        
+        # Store display size for async loading
+        self._display_size = surface.get_size()
 
         surface.fill((0, 0, 0))
 
@@ -145,30 +251,71 @@ class Gallery:
     def _draw_image(self, surface, filename, x_offset):
         filepath = os.path.join(self.path, filename)
         
-        # Load Image
-        if filepath not in self.image_cache:
-            try:
-                img = pygame.image.load(filepath)
-                # Scale to fit
-                sw, sh = surface.get_size()
-                iw, ih = img.get_size()
-                scale = min(sw/iw, sh/ih)
-                new_size = (int(iw*scale), int(ih*scale))
-                img = pygame.transform.scale(img, new_size)
-                self.image_cache[filepath] = img
-                
-                # Limit cache size
-                if len(self.image_cache) > 5:
-                    self.image_cache.pop(next(iter(self.image_cache)))
-            except Exception as e:
-                print(f"Error loading {filepath}: {e}")
-                self.image_cache[filepath] = None
+        # Thread-safe cache access
+        with self._cache_lock:
+            img = self.image_cache.get(filepath)
+        
+        # Check if image is currently being loaded
+        file_index = self.files.index(filename) if filename in self.files else -1
+        is_loading = file_index in self._loading_indices
+        
+        # If not in cache and not loading, show loading indicator and trigger async load
+        if img is None:
+            if is_loading:
+                # Show loading spinner/indicator
+                self._draw_loading_indicator(surface, x_offset)
+                return
+            else:
+                # Try synchronous load as fallback (blocks but ensures display)
+                try:
+                    if os.path.exists(filepath):
+                        img = pygame.image.load(filepath)
+                        # Scale to fit
+                        sw, sh = surface.get_size()
+                        iw, ih = img.get_size()
+                        scale = min(sw/iw, sh/ih)
+                        new_size = (int(iw*scale), int(ih*scale))
+                        img = pygame.transform.scale(img, new_size)
+                        with self._cache_lock:
+                            self.image_cache[filepath] = img
+                except Exception as e:
+                    print(f"Error loading {filepath}: {e}")
+                    return
 
-        img = self.image_cache.get(filepath)
         if img:
             rect = img.get_rect(center=surface.get_rect().center)
             rect.x += x_offset
             surface.blit(img, rect)
+
+    def _draw_loading_indicator(self, surface, x_offset):
+        """Draw a loading spinner when image is being loaded asynchronously."""
+        width, height = surface.get_size()
+        center_x = width // 2 + x_offset
+        center_y = height // 2
+        
+        # Animated spinner using time
+        angle = (pygame.time.get_ticks() // 50) % 360
+        
+        # Draw spinning arc segments
+        radius = 30
+        for i in range(8):
+            segment_angle = angle + i * 45
+            alpha = 255 - (i * 28)  # Fade trail
+            
+            # Calculate segment position
+            import math
+            rad = math.radians(segment_angle)
+            x = center_x + int(radius * math.cos(rad))
+            y = center_y + int(radius * math.sin(rad))
+            
+            # Draw dot
+            color = (255, 255, 255, max(50, alpha))
+            pygame.draw.circle(surface, color[:3], (x, y), 4)
+        
+        # Draw "Loading..." text
+        loading_text = self.font.render("Loading...", True, (200, 200, 200))
+        text_rect = loading_text.get_rect(center=(center_x, center_y + 50))
+        surface.blit(loading_text, text_rect)
 
     def _draw_metadata(self, surface, filename):
         width, height = surface.get_size()
