@@ -1,1 +1,28 @@
-__pycache__
+__pycache__/
+*.py[cod]
+*$py.class
+.vscode/
+secret*
+
+# Distribution / packaging
+dist/
+build/
+*.egg-info/
+*.spec
+
+# Virtual environments
+venv/
+env/
+.env
+
+# Testing
+.pytest_cache/
+.coverage
+htmlcov/
+
+# User Data
+images/
+home/dcim/
+home/cache/
+*.db
+*.db-journal
