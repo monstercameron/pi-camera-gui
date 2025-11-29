@@ -1,0 +1,72 @@
+<layout>
+    <!-- Manual Mode: Full 3-column layout with grouped options -->
+    
+    <style>
+        <!-- Animation definitions -->
+        <animation name="menu_transition" duration="@animation_duration" easing="ease-out" />
+        <animation name="stat_change" duration="100" easing="ease-out-cubic" />
+        <animation name="selection_fade" duration="150" easing="linear" />
+    </style>
+
+    <config>
+        <widths level_0="200" level_1="240" level_2="280" collapsed="60" />
+        <animation duration="@animation_duration" />
+    </config>
+
+    <!-- Main Menu (Left Sidebar) -->
+    <container id="level_0" x="0" y="0" width="200" height="100%" 
+               orientation="vertical" 
+               item_height="60" 
+               font_size="@font_main"
+               bg_color="@menu_bg_level_0" 
+               selected_color="@selected" 
+               unselected_color="@unselected" 
+               selection_bg_color="@selection_bg"
+               padding="10"
+               transition="menu_transition" />
+
+    <!-- Manual Submenu Groups (Exposure/Color/Image) -->
+    <container id="level_1" x="200" y="0" width="240" height="100%" 
+               orientation="vertical" 
+               item_height="50" 
+               font_size="@font_sub"
+               bg_color="@menu_bg_level_1" 
+               selected_color="@selected" 
+               unselected_color="@unselected_dim" 
+               selection_bg_color="@selection_bg"
+               padding="10"
+               transition="menu_transition" />
+
+    <!-- Value Selection (Wider for sliders) -->
+    <container id="level_2" x="440" y="0" width="280" height="100%" 
+               orientation="vertical" 
+               item_height="50" 
+               font_size="@font_sub"
+               bg_color="#1A1A22DD" 
+               selected_color="@selected" 
+               unselected_color="@unselected_dim" 
+               selection_bg_color="@selection_bg"
+               padding="10"
+               transition="menu_transition" />
+
+    <!-- Stats Strip (Bottom Bar) -->
+    <container id="stats" x="0" y="88%" width="100%" height="12%" 
+               bg_color="@stats_bg" 
+               font_size="@font_stats" 
+               color="@text_main"
+               icon_size="@icon_size"
+               spacing="@stats_spacing"
+               padding="15"
+               padding_right="15"
+               
+               selection_alpha="60"
+               selection_border_width="1"
+               selection_padding_x="5"
+               selection_padding_y="3"
+               
+               label_color="#B4B4B4"
+               label_truncate="3"
+               
+               icon_gap="5"
+               value_transition="stat_change" />
+</layout>
